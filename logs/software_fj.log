@@ -1,0 +1,38 @@
+2026-11-11 18:05:54,249 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-11 18:05:54,264 | ERROR | No se pudieron importar las dependencias de la interfaz.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\main.py", line 14, in main
+    from interfaz import Aplicacion
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\interfaz.py", line 3, in <module>
+    import customtkinter as ctk
+ModuleNotFoundError: No module named 'customtkinter'
+2026-11-11 18:05:54,285 | INFO | Cierre de Software FJ. Operaciones realizadas: 0
+2026-11-11 18:07:05,866 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-11 18:08:07,168 | ERROR | Registrar cliente: Identificador: usa entre 1 y 20 caracteres, sin saltos de línea.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\interfaz.py", line 109, in <lambda>
+    correcto, _ = self._realizar("Registrar cliente", lambda: self.sistema.registrar_cliente(
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{nombre: campo.get() for nombre, campo in self.campos_cliente.items()}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ))
+    ^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 75, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 69, in __init__
+    super().__init__(identificador)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 53, in __init__
+    self.__identificador = validar_identificador(identificador)
+                           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 22, in validar_identificador
+    valor = validar_texto(valor, "Identificador", maximo=20).upper()
+            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 15, in validar_texto
+    raise DatosInvalidosError(
+        f"{campo}: usa entre {minimo} y {maximo} caracteres, sin saltos de línea."
+    )
+excepciones.DatosInvalidosError: Identificador: usa entre 1 y 20 caracteres, sin saltos de línea.
+2026-11-11 18:08:07,178 | INFO | Fin de la operación 1: Registrar cliente

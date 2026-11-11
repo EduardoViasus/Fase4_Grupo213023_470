@@ -19,3 +19,7 @@ class NoEncontradoError(ErrorSistema):
 
 class CalculoError(ErrorSistema):
     """El cálculo dio un valor inválido o inconsistente."""
+    
+class ReservaInvalidaError(ErrorSistema):
+    """Error al procesar una reserva."""
+    pass
