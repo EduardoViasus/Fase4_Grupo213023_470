@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import gettempdir
 
 from excepciones import DuplicadoError, ErrorSistema, NoEncontradoError
-from modelos import Cliente, ServicioSala, validar_identificador
+from modelos import Cliente, ReservaSala, AlquilerEquipo, AsesoriaEspecializada, validar_identificador
 
 
 def configurar_logs():
@@ -79,7 +79,7 @@ class SistemaGestion:
         return cliente
 
     def registrar_servicio(self, identificador, nombre, tarifa, capacidad):
-        servicio = ServicioSala(identificador, nombre, tarifa, capacidad)
+        servicio = ReservaSala(identificador, nombre, tarifa, capacidad)
         if any(actual.identificador == servicio.identificador for actual in self.__servicios):
             raise DuplicadoError("Ya existe un servicio con ese identificador.")
         self.__servicios.append(servicio)

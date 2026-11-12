@@ -36,3 +36,113 @@ Traceback (most recent call last):
     )
 excepciones.DatosInvalidosError: Identificador: usa entre 1 y 20 caracteres, sin saltos de línea.
 2026-11-11 18:08:07,178 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-11 18:46:29,163 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-11 18:46:29,164 | INFO | Op 1: Registrar cliente valido: operación exitosa. <modelos.Cliente object at 0x000001A786615160>
+2026-11-11 18:46:29,164 | INFO | Fin de la operación 1: Op 1: Registrar cliente valido
+2026-11-11 18:46:29,164 | ERROR | Op 2: Registrar cliente correo invalido: Correo electrónico con formato incorrecto.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 17, in <lambda>
+    lambda: sistema.registrar_cliente("C102", "Carlos Ruiz", "carlos-correo-mal", "3119876543")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 75, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 41, in __init__
+    self.correo = correo
+    ^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 68, in correo
+    raise DatosInvalidosError("Correo electrónico con formato incorrecto.")
+excepciones.DatosInvalidosError: Correo electrónico con formato incorrecto.
+2026-11-11 18:46:29,194 | INFO | Fin de la operación 2: Op 2: Registrar cliente correo invalido
+2026-11-11 18:46:29,194 | ERROR | Op 3: Registrar cliente telefono invalido: Teléfono: ingrese solo números.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 23, in <lambda>
+    lambda: sistema.registrar_cliente("C103", "Beatriz Gómez", "beatriz@correo.com", "ABC3000000")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 75, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 42, in __init__
+    self.telefono = telefono
+    ^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 79, in telefono
+    raise DatosInvalidosError("Teléfono: ingrese solo números.")
+excepciones.DatosInvalidosError: Teléfono: ingrese solo números.
+2026-11-11 18:46:29,200 | INFO | Fin de la operación 3: Op 3: Registrar cliente telefono invalido
+2026-11-11 18:46:29,200 | INFO | Op 4: Registrar servicio de sala: operación exitosa. <modelos.ReservaSala object at 0x000001A786614AD0>
+2026-11-11 18:46:29,200 | INFO | Fin de la operación 4: Op 4: Registrar servicio de sala
+2026-11-11 18:46:29,200 | ERROR | Op 5: Intentar duplicar servicio S001: Ya existe un servicio con ese identificador.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 35, in <lambda>
+    lambda: sistema.registrar_servicio("S001", "Sala Confe", 30000, 10)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 84, in registrar_servicio
+    raise DuplicadoError("Ya existe un servicio con ese identificador.")
+excepciones.DuplicadoError: Ya existe un servicio con ese identificador.
+2026-11-11 18:46:29,202 | INFO | Fin de la operación 5: Op 5: Intentar duplicar servicio S001
+2026-11-11 18:46:29,203 | ERROR | Op 6: Registrar alquiler equipo: error inesperado
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 41, in crear_equipo
+    sistema._servicios.append(eq)
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: 'SistemaGestion' object has no attribute '_servicios'. Did you mean: 'servicios'?
+2026-11-11 18:46:29,204 | INFO | Fin de la operación 6: Op 6: Registrar alquiler equipo
+2026-11-11 18:46:29,205 | ERROR | Op 7: Registrar asesoria: error inesperado
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 49, in crear_asesoria
+    sistema._servicios.append(asesoria)
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: 'SistemaGestion' object has no attribute '_servicios'. Did you mean: 'servicios'?
+2026-11-11 18:46:29,206 | INFO | Fin de la operación 7: Op 7: Registrar asesoria
+2026-11-11 18:46:29,206 | INFO | Op 8: Cotizar sala S001 por 5 horas: operación exitosa. 240975.0
+2026-11-11 18:46:29,206 | INFO | Fin de la operación 8: Op 8: Cotizar sala S001 por 5 horas
+2026-11-11 18:46:29,207 | ERROR | Op 9: Cotizar servicio inexistente: No existe un servicio con el identificador S999.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 63, in <lambda>
+    lambda: sistema.cotizar("S999", 3)
+            ~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 102, in cotizar
+    servicio = self.buscar_servicio(servicio_id)
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 99, in buscar_servicio
+    return self._buscar(self.__servicios, identificador, "un servicio")
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 93, in _buscar
+    raise NoEncontradoError(f"No existe {entidad} con el identificador {identificador}.")
+excepciones.NoEncontradoError: No existe un servicio con el identificador S999.
+2026-11-11 18:46:29,210 | INFO | Fin de la operación 9: Op 9: Cotizar servicio inexistente
+2026-11-11 18:46:29,211 | ERROR | Op 10: Cotizar duracion negativa: Horas de sala: debe estar entre 1 y 720.
+Traceback (most recent call last):
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 57, in ejecutar
+    resultado = accion()
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\simulaciones.py", line 69, in <lambda>
+    lambda: sistema.cotizar("S001", -4)
+            ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\sistema.py", line 103, in cotizar
+    return servicio.calcular_costo(duracion, impuesto, descuento)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 139, in calcular_costo
+    duracion_val = validar_numero(duracion, "Horas de sala", minimo=1, maximo=720)
+  File "D:\Documentos\GitHub\Shooter_Refugio_En_La_Oscuridad\Fase4_Grupo213023_470\modelos.py", line 33, in validar_numero
+    raise DatosInvalidosError(f"{campo}: debe estar entre {minimo} y {maximo}.")
+excepciones.DatosInvalidosError: Horas de sala: debe estar entre 1 y 720.
+2026-11-11 18:46:29,214 | INFO | Fin de la operación 10: Op 10: Cotizar duracion negativa
+2026-11-11 18:46:29,214 | INFO | Cierre de Software FJ. Operaciones realizadas: 10
+2026-11-11 18:48:08,960 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-11 18:49:03,069 | INFO | Registrar cliente: operación exitosa. <modelos.Cliente object at 0x0000023CE648E510>
+2026-11-11 18:49:03,069 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-11 18:50:27,526 | INFO | Registrar sala: operación exitosa. <modelos.ReservaSala object at 0x0000023CE648E660>
+2026-11-11 18:50:27,527 | INFO | Fin de la operación 2: Registrar sala
+2026-11-11 18:52:53,002 | INFO | Consultar costo: operación exitosa. 100000.0
+2026-11-11 18:52:53,002 | INFO | Fin de la operación 3: Consultar costo
+2026-11-11 18:52:57,972 | INFO | Cierre de Software FJ. Operaciones realizadas: 3
+2026-11-11 21:36:27,450 | INFO | Cierre de Software FJ. Operaciones realizadas: 1
