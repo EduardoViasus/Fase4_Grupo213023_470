@@ -1,154 +1,236 @@
-"""Entidades y reglas del negocio"""
-
 from abc import ABC, abstractmethod
 from math import isfinite
 import re
 
-from excepciones import CalculoError, DatosInvalidosError
+from excepciones import CalculoError, DatosInvalidosError, ReservaInvalidaError
 
-
+# Funciones de validacion
 def validar_texto(valor, campo, minimo=1, maximo=80):
     if not isinstance(valor, str):
         raise DatosInvalidosError(f"{campo}: debes escribir un texto.")
     valor = valor.strip()
-    if not minimo <= len(valor) <= maximo or not valor.isprintable():
-        raise DatosInvalidosError(
-            f"{campo}: usa entre {minimo} y {maximo} caracteres, sin saltos de línea."
-        )
+    if not (minimo <= len(valor) <= maximo) or not valor.isprintable():
+        raise DatosInvalidosError(f"{campo}: usa entre {minimo} y {maximo} caracteres.")
     return valor
-
 
 def validar_identificador(valor):
     valor = validar_texto(valor, "Identificador", maximo=20).upper()
     if not re.fullmatch(r"[A-Z0-9][A-Z0-9_-]*", valor):
-        raise DatosInvalidosError("Identificador: usa letras, números, guion o guion bajo.")
+        raise DatosInvalidosError("Identificador: usa letras, números o guiones.")
     return valor
 
-
-def validar_numero(valor, campo, minimo, maximo):
-    """aqui se convierte las entradas del formulario y conserva la causa de cada error"""
+def validar_numero(valor, campo, minimo=0, maximo=100000000):
     try:
         if isinstance(valor, bool) or not isinstance(valor, (str, int, float)):
-            raise TypeError("Se esperaba un número o un texto numérico.")
+            raise TypeError("Se esperaba un número.")
         if isinstance(valor, str):
             valor = valor.strip().replace(",", ".")
         numero = float(valor)
     except (TypeError, ValueError, OverflowError) as error:
         raise DatosInvalidosError(f"{campo}: escribe un número válido.") from error
-    if not isfinite(numero) or not minimo <= numero <= maximo:
+
+    if not isfinite(numero) or not (minimo <= numero <= maximo):
         raise DatosInvalidosError(f"{campo}: debe estar entre {minimo} y {maximo}.")
     return numero
 
-
-def validar_entero(valor, campo, minimo, maximo):
-    numero = validar_numero(valor, campo, minimo, maximo)
-    if not numero.is_integer():
-        raise DatosInvalidosError(f"{campo}: debe ser un número entero.")
-    return int(numero)
-
-
-class Entidad(ABC):
-
-    def __init__(self, identificador):
-        self.__identificador = validar_identificador(identificador)
+# Clase Cliente
+class Cliente:
+    def __init__(self, identificador, nombre, correo, telefono):
+        self.identificador = identificador
+        self.nombre = nombre
+        self.correo = correo
+        self.telefono = telefono
 
     @property
     def identificador(self):
-        return self.__identificador
+        return self._identificador
 
-    @abstractmethod
-    def describir(self):
-        pass
-
-    def __str__(self):
-        return self.describir()
-
-
-class Cliente(Entidad):
-    def __init__(self, identificador, nombre, correo, telefono):
-        super().__init__(identificador)
-        nombre = validar_texto(nombre, "Nombre", minimo=3)
-        if (sum(letra.isalpha() for letra in nombre) < 2
-                or not all(letra.isalpha() or letra in " '-." for letra in nombre)):
-            raise DatosInvalidosError("Nombre: usa letras y separadores habituales.")
-        correo = validar_texto(correo, "Correo", maximo=254).lower()
-        if not re.fullmatch(r"[a-z0-9_%+.-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", correo):
-            raise DatosInvalidosError("Correo: escribe una dirección como ana@ejemplo.com.")
-        usuario, dominio = correo.split("@")
-        if (len(usuario) > 64 or usuario.startswith(".") or usuario.endswith(".")
-                or ".." in usuario or any(
-                    parte.startswith("-") or parte.endswith("-") or len(parte) > 63
-                    for parte in dominio.split(".")
-                )):
-            raise DatosInvalidosError("Correo: el formato de la dirección no es válido.")
-        telefono = validar_texto(telefono, "Teléfono", maximo=16)
-        if not re.fullmatch(r"\+?[0-9]{7,15}", telefono):
-            raise DatosInvalidosError("Teléfono: usa de 7 a 15 dígitos y un + opcional al inicio.")
-        self.__nombre = nombre
-        self.__correo = correo
-        self.__telefono = telefono
+    @identificador.setter
+    def identificador(self, valor):
+        self._identificador = validar_identificador(valor)
 
     @property
     def nombre(self):
-        return self.__nombre
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, valor):
+        self._nombre = validar_texto(valor, "Nombre completo", minimo=2, maximo=100)
 
     @property
     def correo(self):
-        return self.__correo
+        return self._correo
+
+    @correo.setter
+    def correo(self, valor):
+        valor = validar_texto(valor, "Correo electrónico", minimo=5, maximo=100)
+        if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", valor):
+            raise DatosInvalidosError("Correo electrónico con formato incorrecto.")
+        self._correo = valor
 
     @property
     def telefono(self):
-        return self.__telefono
+        return self._telefono
+
+    @telefono.setter
+    def telefono(self, valor):
+        valor = validar_texto(valor, "Teléfono", minimo=7, maximo=15)
+        if not valor.isdigit():
+            raise DatosInvalidosError("Teléfono: ingrese solo números.")
+        self._telefono = valor
 
     def describir(self):
-        return f"{self.identificador} | {self.nombre} | {self.correo} | {self.telefono}"
+        return f"Cliente: {self.nombre} (ID: {self.identificador}) | Correo: {self.correo} | Tel: {self.telefono}"
 
+# Clase abstracta Servicio
+class Servicio(ABC):
+    def __init__(self, identificador, nombre, tarifa_base):
+        self.identificador = identificador
+        self.nombre = nombre
+        self.tarifa_base = tarifa_base
 
-class Servicio(Entidad):
-    def __init__(self, identificador, nombre, tarifa):
-        super().__init__(identificador)
-        self.__nombre = validar_texto(nombre, "Nombre del servicio", minimo=3)
-        self.__tarifa = round(validar_numero(tarifa, "Tarifa por hora", 0.01, 1000000000), 2)
+    @property
+    def identificador(self):
+        return self._identificador
+
+    @identificador.setter
+    def identificador(self, valor):
+        self._identificador = validar_identificador(valor)
 
     @property
     def nombre(self):
-        return self.__nombre
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, valor):
+        self._nombre = validar_texto(valor, "Nombre del servicio", minimo=3, maximo=80)
 
     @property
-    def tarifa(self):
-        return self.__tarifa
+    def tarifa_base(self):
+        return self._tarifa_base
 
-    def _aplicar_ajustes(self, subtotal, impuesto, descuento):
-        impuesto = validar_numero(impuesto, "Impuesto (%)", 0, 100)
-        descuento = validar_numero(descuento, "Descuento (%)", 0, 100)
-        total = subtotal * (1 - descuento / 100) * (1 + impuesto / 100)
-        if not isfinite(total) or total < 0:
-            raise CalculoError("El costo calculado no es válido.")
+    @tarifa_base.setter
+    def tarifa_base(self, valor):
+        self._tarifa_base = validar_numero(valor, "Tarifa base", minimo=0, maximo=5000000)
+
+    @abstractmethod
+    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def describir(self):
+        pass
+
+# Subclase 1: Reserva de salas
+class ReservaSala(Servicio):
+    def __init__(self, identificador, nombre, tarifa_base, capacidad):
+        super().__init__(identificador, nombre, tarifa_base)
+        self.capacidad = capacidad
+
+    @property
+    def capacidad(self):
+        return self._capacidad
+
+    @capacidad.setter
+    def capacidad(self, valor):
+        self._capacidad = int(validar_numero(valor, "Capacidad", minimo=1, maximo=500))
+
+    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
+        duracion_val = validar_numero(duracion, "Horas de sala", minimo=1, maximo=720)
+        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
+        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
+        
+        subtotal = self.tarifa_base * duracion_val
+        subtotal_desc = subtotal * (1 - desc / 100)
+        total = subtotal_desc * (1 + imp / 100)
         return round(total, 2)
 
-    @abstractmethod
-    def validar_parametros(self, duracion):
-        pass
+    def describir(self):
+        return f"SALA: {self.nombre} (ID: {self.identificador}) | Capacidad: {self.capacidad} p. | Tarifa/h: ${self.tarifa_base:,.0f}"
 
-    @abstractmethod
-    def calcular_costo(self, duracion, impuesto=0, descuento=0):
-        pass
+# Subclase 2: Alquiler de equipos
+class AlquilerEquipo(Servicio):
+    def __init__(self, identificador, nombre, tarifa_base, deposito_garantia=50000):
+        super().__init__(identificador, nombre, tarifa_base)
+        self.deposito_garantia = deposito_garantia
 
+    @property
+    def deposito_garantia(self):
+        return self._deposito_garantia
 
-class ServicioSala(Servicio):
-    def __init__(self, identificador, nombre, tarifa, capacidad):
-        super().__init__(identificador, nombre, tarifa)
-        self.__capacidad = validar_entero(capacidad, "Capacidad de la sala", 1, 100)
+    @deposito_garantia.setter
+    def deposito_garantia(self, valor):
+        self._deposito_garantia = validar_numero(valor, "Depósito garantía", minimo=0, maximo=2000000)
 
-    def validar_parametros(self, duracion):
-        return validar_numero(duracion, "Horas de sala", 1, 12)
-
-    def calcular_costo(self, duracion, impuesto=0, descuento=0):
-        horas = self.validar_parametros(duracion)
-        return self._aplicar_ajustes(self.tarifa * horas, impuesto, descuento)
+    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
+        duracion_val = validar_numero(duracion, "Días de alquiler", minimo=1, maximo=90)
+        subtotal = (self.tarifa_base * duracion_val) + self.deposito_garantia
+        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
+        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
+        
+        total = (subtotal * (1 - desc / 100)) * (1 + imp / 100)
+        return round(total, 2)
 
     def describir(self):
-        return (f"{self.identificador} | Sala: {self.nombre} | "
-                f"{self.__capacidad} personas | ${self.tarifa:,.2f}/hora")
+        return f"EQUIPO: {self.nombre} (ID: {self.identificador}) | Tarifa/día: ${self.tarifa_base:,.0f} | Depósito: ${self.deposito_garantia:,.0f}"
 
+# Subclase 3: Asesoria especializada
+class AsesoriaEspecializada(Servicio):
+    def __init__(self, identificador, nombre, tarifa_base, especialista):
+        super().__init__(identificador, nombre, tarifa_base)
+        self.especialista = especialista
 
+    @property
+    def especialista(self):
+        return self._especialista
+
+    @especialista.setter
+    def especialista(self, valor):
+        self._especialista = validar_texto(valor, "Especialista", minimo=3, maximo=100)
+
+    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
+        duracion_val = validar_numero(duracion, "Horas asesoría", minimo=1, maximo=100)
+        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
+        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
+        
+        subtotal = self.tarifa_base * duracion_val
+        total = (subtotal * (1 - desc / 100)) * (1 + imp / 100)
+        return round(total, 2)
+
+    def describir(self):
+        return f"ASESORIA: {self.nombre} (ID: {self.identificador}) | Asesor: {self.especialista} | Tarifa/h: ${self.tarifa_base:,.0f}"
+
+# Clase Reserva
+class Reserva:
+    def __init__(self, id_reserva, cliente, servicio, duracion):
+        if not isinstance(cliente, Cliente):
+            raise DatosInvalidosError("Reserva: Cliente no válido.")
+        if not isinstance(servicio, Servicio):
+            raise DatosInvalidosError("Reserva: Servicio no válido.")
+            
+        self.id_reserva = validar_identificador(id_reserva)
+        self.cliente = cliente
+        self.servicio = servicio
+        self.duracion = validar_numero(duracion, "Duración", minimo=1, maximo=720)
+        self._estado = "PENDIENTE"
+
+    @property
+    def estado(self):
+        return self._estado
+
+    def confirmar(self):
+        if self._estado == "CANCELADA":
+            raise ReservaInvalidaError("No se puede confirmar una reserva cancelada.")
+        self._estado = "CONFIRMADA"
+
+    def cancelar(self):
+        if self._estado == "CANCELADA":
+            raise ReservaInvalidaError("La reserva ya está cancelada.")
+        self._estado = "CANCELADA"
+
+    def calcular_costo_total(self, impuesto=0, descuento=0):
+        return self.servicio.calcular_costo(self.duracion, impuesto, descuento)
+
+    def describir(self):
+        costo = self.calcular_costo_total()
+        return f"RESERVA {self.id_reserva} [{self._estado}] - Cliente: {self.cliente.nombre} | Servicio: {self.servicio.nombre} | Total: ${costo:,.2f}"
