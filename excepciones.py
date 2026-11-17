@@ -14,12 +14,23 @@ class DuplicadoError(ErrorSistema):
 
 
 class NoEncontradoError(ErrorSistema):
-    """No existe el cliente o servicio solicitado."""
+    """No existe el cliente, servicio o reserva solicitado."""
 
 
 class CalculoError(ErrorSistema):
     """El cálculo dio un valor inválido o inconsistente."""
     
-class ReservaInvalidaError(ErrorSistema):
+class ReservaError(ErrorSistema):
+    """No fue posible procesar una reserva."""
+
+
+class ReservaInvalidaError(ReservaError):
     """Error al procesar una reserva."""
-    pass
+
+
+class OperacionNoPermitidaError(ReservaInvalidaError):
+    """El estado actual no permite realizar la operación solicitada."""
+
+
+class ServicioNoDisponibleError(ReservaInvalidaError):
+    """El servicio ya está ocupado por otra reserva."""

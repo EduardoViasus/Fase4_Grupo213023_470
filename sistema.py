@@ -4,8 +4,11 @@ import logging
 from pathlib import Path
 from tempfile import gettempdir
 
-from excepciones import DuplicadoError, ErrorSistema, NoEncontradoError
-from modelos import Cliente, ReservaSala, AlquilerEquipo, AsesoriaEspecializada, validar_identificador
+from excepciones import DatosInvalidosError, DuplicadoError, ErrorSistema, NoEncontradoError
+from modelos import (
+    Cliente, Servicio, Reserva, ReservaSala, AlquilerEquipo,
+    AsesoriaEspecializada, validar_identificador,
+)
 
 
 def configurar_logs():
@@ -36,6 +39,7 @@ class SistemaGestion:
     def __init__(self):
         self.__clientes = []
         self.__servicios = []
+        self.__reservas = []
         self.__operaciones = 0
         self.logger, self.ruta_log, self.aviso_log = configurar_logs()
         self.logger.info("Inicio de Software FJ; listas vacías en memoria.")
@@ -47,6 +51,10 @@ class SistemaGestion:
     @property
     def servicios(self):
         return self.__servicios.copy()
+
+    @property
+    def reservas(self):
+        return self.__reservas.copy()
 
     @property
     def operaciones(self):
@@ -80,6 +88,24 @@ class SistemaGestion:
 
     def registrar_servicio(self, identificador, nombre, tarifa, capacidad):
         servicio = ReservaSala(identificador, nombre, tarifa, capacidad)
+        return self.agregar_servicio(servicio)
+
+    def registrar_equipo(self, identificador, nombre, tarifa, deposito_garantia=50000,
+                         cantidad=1, unidad="días"):
+        servicio = AlquilerEquipo(identificador, nombre, tarifa, deposito_garantia,
+                                  cantidad=cantidad, unidad=unidad)
+        return self.agregar_servicio(servicio)
+
+    def registrar_asesoria(self, identificador, nombre, tarifa, especialista,
+                           especialidad="General", horas_preparacion=0):
+        servicio = AsesoriaEspecializada(identificador, nombre, tarifa, especialista,
+                                         especialidad=especialidad,
+                                         horas_preparacion=horas_preparacion)
+        return self.agregar_servicio(servicio)
+
+    def agregar_servicio(self, servicio):
+        if not isinstance(servicio, Servicio):
+            raise DatosInvalidosError("Debes proporcionar un servicio válido.")
         if any(actual.identificador == servicio.identificador for actual in self.__servicios):
             raise DuplicadoError("Ya existe un servicio con ese identificador.")
         self.__servicios.append(servicio)
@@ -98,9 +124,35 @@ class SistemaGestion:
     def buscar_servicio(self, identificador):
         return self._buscar(self.__servicios, identificador, "un servicio")
 
+    def buscar_reserva(self, identificador):
+        return self._buscar(self.__reservas, identificador, "una reserva")
+
     def cotizar(self, servicio_id, duracion, impuesto=0, descuento=0):
         servicio = self.buscar_servicio(servicio_id)
         return servicio.calcular_costo(duracion, impuesto, descuento)
+
+    def crear_reserva(self, cliente_id, servicio_id, duracion, impuesto=0, descuento=0):
+        cliente = self.buscar_cliente(cliente_id)
+        servicio = self.buscar_servicio(servicio_id)
+        identificador = f"R{len(self.__reservas) + 1:03d}"
+        reserva = Reserva(identificador, cliente, servicio, duracion, impuesto, descuento)
+        self.__reservas.append(reserva)
+        return reserva
+
+    def confirmar_reserva(self, identificador):
+        reserva = self.buscar_reserva(identificador)
+        reserva.confirmar()
+        return reserva
+
+    def cancelar_reserva(self, identificador):
+        reserva = self.buscar_reserva(identificador)
+        reserva.cancelar()
+        return reserva
+
+    def procesar_reserva(self, identificador):
+        reserva = self.buscar_reserva(identificador)
+        reserva.procesar()
+        return reserva
 
     def cerrar(self):
         self.logger.info("Cierre de Software FJ. Operaciones realizadas: %s", self.operaciones)

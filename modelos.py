@@ -2,7 +2,10 @@ from abc import ABC, abstractmethod
 from math import isfinite
 import re
 
-from excepciones import CalculoError, DatosInvalidosError, ReservaInvalidaError
+from excepciones import (
+    CalculoError, DatosInvalidosError, ErrorSistema, OperacionNoPermitidaError,
+    ReservaError, ServicioNoDisponibleError,
+)
 
 # Funciones de validacion
 def validar_texto(valor, campo, minimo=1, maximo=80):
@@ -33,21 +36,38 @@ def validar_numero(valor, campo, minimo=0, maximo=100000000):
         raise DatosInvalidosError(f"{campo}: debe estar entre {minimo} y {maximo}.")
     return numero
 
-# Clase Cliente
-class Cliente:
-    def __init__(self, identificador, nombre, correo, telefono):
-        self.identificador = identificador
-        self.nombre = nombre
-        self.correo = correo
-        self.telefono = telefono
+def validar_entero(valor, campo, minimo, maximo):
+    numero = validar_numero(valor, campo, minimo, maximo)
+    if not numero.is_integer():
+        raise DatosInvalidosError(f"{campo}: debe ser un número entero.")
+    return int(numero)
+
+
+class Entidad(ABC):
+    """Base común; el identificador no cambia después de crear la entidad."""
+
+    def __init__(self, identificador):
+        self.__identificador = validar_identificador(identificador)
 
     @property
     def identificador(self):
-        return self._identificador
+        return self.__identificador
 
-    @identificador.setter
-    def identificador(self, valor):
-        self._identificador = validar_identificador(valor)
+    @abstractmethod
+    def describir(self):
+        pass
+
+    def __str__(self):
+        return self.describir()
+
+
+# Clase Cliente: conserva las propiedades con setters del pull request.
+class Cliente(Entidad):
+    def __init__(self, identificador, nombre, correo, telefono):
+        super().__init__(identificador)
+        self.nombre = nombre
+        self.correo = correo
+        self.telefono = telefono
 
     @property
     def nombre(self):
@@ -55,7 +75,11 @@ class Cliente:
 
     @nombre.setter
     def nombre(self, valor):
-        self._nombre = validar_texto(valor, "Nombre completo", minimo=2, maximo=100)
+        valor = validar_texto(valor, "Nombre completo", minimo=2, maximo=100)
+        if (sum(letra.isalpha() for letra in valor) < 2
+                or not all(letra.isalpha() or letra in " '-." for letra in valor)):
+            raise DatosInvalidosError("Nombre: usa letras y separadores habituales.")
+        self._nombre = valor
 
     @property
     def correo(self):
@@ -63,8 +87,15 @@ class Cliente:
 
     @correo.setter
     def correo(self, valor):
-        valor = validar_texto(valor, "Correo electrónico", minimo=5, maximo=100)
-        if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", valor):
+        valor = validar_texto(valor, "Correo electrónico", minimo=5, maximo=254).lower()
+        if not re.fullmatch(r"[a-z0-9_%+.-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", valor):
+            raise DatosInvalidosError("Correo electrónico con formato incorrecto.")
+        usuario, dominio = valor.split("@")
+        if (len(usuario) > 64 or usuario.startswith(".") or usuario.endswith(".")
+                or ".." in usuario or any(
+                    parte.startswith("-") or parte.endswith("-") or len(parte) > 63
+                    for parte in dominio.split(".")
+                )):
             raise DatosInvalidosError("Correo electrónico con formato incorrecto.")
         self._correo = valor
 
@@ -74,28 +105,21 @@ class Cliente:
 
     @telefono.setter
     def telefono(self, valor):
-        valor = validar_texto(valor, "Teléfono", minimo=7, maximo=15)
-        if not valor.isdigit():
-            raise DatosInvalidosError("Teléfono: ingrese solo números.")
+        valor = validar_texto(valor, "Teléfono", minimo=7, maximo=16)
+        if not re.fullmatch(r"\+?[0-9]{7,15}", valor):
+            raise DatosInvalidosError("Teléfono: usa de 7 a 15 dígitos y un + opcional al inicio.")
         self._telefono = valor
 
     def describir(self):
         return f"Cliente: {self.nombre} (ID: {self.identificador}) | Correo: {self.correo} | Tel: {self.telefono}"
 
 # Clase abstracta Servicio
-class Servicio(ABC):
+class Servicio(Entidad):
     def __init__(self, identificador, nombre, tarifa_base):
-        self.identificador = identificador
+        super().__init__(identificador)
         self.nombre = nombre
         self.tarifa_base = tarifa_base
-
-    @property
-    def identificador(self):
-        return self._identificador
-
-    @identificador.setter
-    def identificador(self, valor):
-        self._identificador = validar_identificador(valor)
+        self.__reserva_activa = None
 
     @property
     def nombre(self):
@@ -111,10 +135,50 @@ class Servicio(ABC):
 
     @tarifa_base.setter
     def tarifa_base(self, valor):
-        self._tarifa_base = validar_numero(valor, "Tarifa base", minimo=0, maximo=5000000)
+        self._tarifa_base = round(validar_numero(valor, "Tarifa base", 0.01, 1000000000), 2)
+
+    @property
+    def tarifa(self):
+        return self.tarifa_base
+
+    @property
+    def unidad_duracion(self):
+        return "horas"
+
+    @property
+    def disponible(self):
+        return self.__reserva_activa is None
+
+    def ocupar(self, reserva_id):
+        reserva_id = validar_identificador(reserva_id)
+        if not self.disponible:
+            raise ServicioNoDisponibleError(f"El servicio {self.identificador} está ocupado.")
+        self.__reserva_activa = reserva_id
+
+    def liberar(self, reserva_id):
+        if self.__reserva_activa != reserva_id:
+            raise OperacionNoPermitidaError("Esta reserva no tiene ocupado el servicio.")
+        self.__reserva_activa = None
+
+    def _aplicar_ajustes(self, subtotal, impuesto, descuento):
+        impuesto = validar_numero(impuesto, "Impuesto (%)", 0, 100)
+        descuento = validar_numero(descuento, "Descuento (%)", 0, 100)
+        total = subtotal * (1 - descuento / 100) * (1 + impuesto / 100)
+        if not isfinite(total) or total < 0:
+            raise CalculoError("El costo calculado no es válido.")
+        return round(total, 2)
+
+    @property
+    @abstractmethod
+    def rango_duracion(self):
+        pass
 
     @abstractmethod
-    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
+    def validar_parametros(self, duracion):
+        pass
+
+    @abstractmethod
+    def calcular_costo(self, duracion, impuesto=0, descuento=0):
         pass
 
     @abstractmethod
@@ -133,26 +197,49 @@ class ReservaSala(Servicio):
 
     @capacidad.setter
     def capacidad(self, valor):
-        self._capacidad = int(validar_numero(valor, "Capacidad", minimo=1, maximo=500))
+        self._capacidad = validar_entero(valor, "Capacidad", 1, 500)
 
-    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
-        duracion_val = validar_numero(duracion, "Horas de sala", minimo=1, maximo=720)
-        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
-        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
-        
-        subtotal = self.tarifa_base * duracion_val
-        subtotal_desc = subtotal * (1 - desc / 100)
-        total = subtotal_desc * (1 + imp / 100)
-        return round(total, 2)
+    @property
+    def rango_duracion(self):
+        return 1, 720
+
+    def validar_parametros(self, duracion):
+        return validar_numero(duracion, "Horas de sala", *self.rango_duracion)
+
+    def calcular_costo(self, duracion, impuesto=0, descuento=0):
+        horas = self.validar_parametros(duracion)
+        return self._aplicar_ajustes(self.tarifa_base * horas, impuesto, descuento)
 
     def describir(self):
         return f"SALA: {self.nombre} (ID: {self.identificador}) | Capacidad: {self.capacidad} p. | Tarifa/h: ${self.tarifa_base:,.0f}"
 
 # Subclase 2: Alquiler de equipos
 class AlquilerEquipo(Servicio):
-    def __init__(self, identificador, nombre, tarifa_base, deposito_garantia=50000):
+    def __init__(self, identificador, nombre, tarifa_base, deposito_garantia=50000,
+                 cantidad=1, unidad="días"):
         super().__init__(identificador, nombre, tarifa_base)
         self.deposito_garantia = deposito_garantia
+        self.cantidad = cantidad
+        unidad = validar_texto(unidad, "Unidad de alquiler").lower()
+        if unidad not in ("horas", "días"):
+            raise DatosInvalidosError("Unidad de alquiler: elige horas o días.")
+        self.__unidad = unidad
+
+    @property
+    def unidad_duracion(self):
+        return self.__unidad
+
+    @property
+    def rango_duracion(self):
+        return (0.5, 72) if self.unidad_duracion == "horas" else (1, 90)
+
+    @property
+    def cantidad(self):
+        return self._cantidad
+
+    @cantidad.setter
+    def cantidad(self, valor):
+        self._cantidad = validar_entero(valor, "Cantidad de equipos", 1, 100)
 
     @property
     def deposito_garantia(self):
@@ -160,25 +247,45 @@ class AlquilerEquipo(Servicio):
 
     @deposito_garantia.setter
     def deposito_garantia(self, valor):
-        self._deposito_garantia = validar_numero(valor, "Depósito garantía", minimo=0, maximo=2000000)
+        self._deposito_garantia = round(validar_numero(valor, "Depósito garantía", 0, 2000000), 2)
 
-    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
-        duracion_val = validar_numero(duracion, "Días de alquiler", minimo=1, maximo=90)
-        subtotal = (self.tarifa_base * duracion_val) + self.deposito_garantia
-        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
-        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
-        
-        total = (subtotal * (1 - desc / 100)) * (1 + imp / 100)
-        return round(total, 2)
+    def validar_parametros(self, duracion):
+        return validar_numero(duracion, f"Alquiler en {self.unidad_duracion}", *self.rango_duracion)
+
+    def calcular_costo(self, duracion, impuesto=0, descuento=0):
+        tiempo = self.validar_parametros(duracion)
+        subtotal = self.tarifa_base * tiempo * self.cantidad + self.deposito_garantia
+        return self._aplicar_ajustes(subtotal, impuesto, descuento)
 
     def describir(self):
-        return f"EQUIPO: {self.nombre} (ID: {self.identificador}) | Tarifa/día: ${self.tarifa_base:,.0f} | Depósito: ${self.deposito_garantia:,.0f}"
+        unidad = "hora" if self.unidad_duracion == "horas" else "día"
+        return (f"EQUIPO: {self.nombre} (ID: {self.identificador}) | {self.cantidad} unidades | "
+                f"Tarifa/unidad/{unidad}: ${self.tarifa_base:,.2f} | "
+                f"Depósito único: ${self.deposito_garantia:,.2f}")
 
 # Subclase 3: Asesoria especializada
 class AsesoriaEspecializada(Servicio):
-    def __init__(self, identificador, nombre, tarifa_base, especialista):
+    def __init__(self, identificador, nombre, tarifa_base, especialista,
+                 especialidad="General", horas_preparacion=0):
         super().__init__(identificador, nombre, tarifa_base)
         self.especialista = especialista
+        self.especialidad = especialidad
+        preparacion = validar_numero(horas_preparacion, "Horas de preparación", 0, 0.5)
+        if preparacion not in (0, 0.5):
+            raise DatosInvalidosError("Preparación: elige 0 o 0.5 horas.")
+        self.__horas_preparacion = preparacion
+
+    @property
+    def horas_preparacion(self):
+        return self.__horas_preparacion
+
+    @property
+    def especialidad(self):
+        return self._especialidad
+
+    @especialidad.setter
+    def especialidad(self, valor):
+        self._especialidad = validar_texto(valor, "Especialidad", minimo=3, maximo=60)
 
     @property
     def especialista(self):
@@ -188,49 +295,102 @@ class AsesoriaEspecializada(Servicio):
     def especialista(self, valor):
         self._especialista = validar_texto(valor, "Especialista", minimo=3, maximo=100)
 
-    def calcular_costo(self, duracion, impuesto=0, descuento=0, *args, **kwargs):
-        duracion_val = validar_numero(duracion, "Horas asesoría", minimo=1, maximo=100)
-        imp = validar_numero(impuesto, "Impuesto (%)", minimo=0, maximo=100)
-        desc = validar_numero(descuento, "Descuento (%)", minimo=0, maximo=100)
-        
-        subtotal = self.tarifa_base * duracion_val
-        total = (subtotal * (1 - desc / 100)) * (1 + imp / 100)
-        return round(total, 2)
+    @property
+    def rango_duracion(self):
+        return 0.5, 100
+
+    def validar_parametros(self, duracion):
+        return validar_numero(duracion, "Horas de asesoría", *self.rango_duracion)
+
+    def calcular_costo(self, duracion, impuesto=0, descuento=0):
+        horas = self.validar_parametros(duracion)
+        subtotal = self.tarifa_base * (horas + self.horas_preparacion)
+        return self._aplicar_ajustes(subtotal, impuesto, descuento)
 
     def describir(self):
-        return f"ASESORIA: {self.nombre} (ID: {self.identificador}) | Asesor: {self.especialista} | Tarifa/h: ${self.tarifa_base:,.0f}"
+        return (f"ASESORÍA: {self.nombre} (ID: {self.identificador}) | {self.especialidad} | "
+                f"Asesor: {self.especialista} | Tarifa/h: ${self.tarifa_base:,.2f} | "
+                f"Preparación adicional: {self.horas_preparacion:g} h")
 
 # Clase Reserva
-class Reserva:
-    def __init__(self, id_reserva, cliente, servicio, duracion):
+class Reserva(Entidad):
+    def __init__(self, id_reserva, cliente, servicio, duracion, impuesto=0, descuento=0):
+        super().__init__(id_reserva)
         if not isinstance(cliente, Cliente):
             raise DatosInvalidosError("Reserva: Cliente no válido.")
         if not isinstance(servicio, Servicio):
             raise DatosInvalidosError("Reserva: Servicio no válido.")
             
-        self.id_reserva = validar_identificador(id_reserva)
-        self.cliente = cliente
-        self.servicio = servicio
-        self.duracion = validar_numero(duracion, "Duración", minimo=1, maximo=720)
-        self._estado = "PENDIENTE"
+        if not servicio.disponible:
+            raise ServicioNoDisponibleError(f"El servicio {servicio.identificador} está ocupado.")
+        self.__cliente = cliente
+        self.__servicio = servicio
+        self.__duracion = servicio.validar_parametros(duracion)
+        self.__impuesto = validar_numero(impuesto, "Impuesto (%)", 0, 100)
+        self.__descuento = validar_numero(descuento, "Descuento (%)", 0, 100)
+        self.__total = self.calcular_costo_total()
+        self.__estado = "PENDIENTE"
+
+    @property
+    def id_reserva(self):
+        return self.identificador
+
+    @property
+    def cliente(self):
+        return self.__cliente
+
+    @property
+    def servicio(self):
+        return self.__servicio
+
+    @property
+    def duracion(self):
+        return self.__duracion
+
+    @property
+    def total(self):
+        return self.__total
 
     @property
     def estado(self):
-        return self._estado
+        return self.__estado
 
     def confirmar(self):
-        if self._estado == "CANCELADA":
-            raise ReservaInvalidaError("No se puede confirmar una reserva cancelada.")
-        self._estado = "CONFIRMADA"
+        if self.estado != "PENDIENTE":
+            raise OperacionNoPermitidaError("Solo puedes confirmar una reserva pendiente.")
+        self.servicio.ocupar(self.identificador)
+        self.__estado = "CONFIRMADA"
 
     def cancelar(self):
-        if self._estado == "CANCELADA":
-            raise ReservaInvalidaError("La reserva ya está cancelada.")
-        self._estado = "CANCELADA"
+        if self.estado not in ("PENDIENTE", "CONFIRMADA"):
+            raise OperacionNoPermitidaError("La reserva ya terminó o ya fue cancelada.")
+        if self.estado == "CONFIRMADA":
+            self.servicio.liberar(self.identificador)
+        self.__estado = "CANCELADA"
 
-    def calcular_costo_total(self, impuesto=0, descuento=0):
+    def calcular_costo_total(self, impuesto=None, descuento=None):
+        if impuesto is None:
+            impuesto = self.__impuesto
+        if descuento is None:
+            descuento = self.__descuento
         return self.servicio.calcular_costo(self.duracion, impuesto, descuento)
 
+    def procesar(self):
+        if self.estado != "CONFIRMADA":
+            raise OperacionNoPermitidaError("Primero debes confirmar la reserva.")
+        try:
+            total = self.calcular_costo_total()
+            if not isfinite(total) or total < 0 or round(total, 2) != self.total:
+                raise CalculoError("El total no coincide con el valor original de la reserva.")
+            self.servicio.liberar(self.identificador)
+        except (ErrorSistema, ArithmeticError, TypeError, ValueError) as error:
+            raise ReservaError("No se pudo completar la reserva; revisa la causa en el log.") from error
+        else:
+            self.__estado = "COMPLETADA"
+            return self.total
+
     def describir(self):
-        costo = self.calcular_costo_total()
-        return f"RESERVA {self.id_reserva} [{self._estado}] - Cliente: {self.cliente.nombre} | Servicio: {self.servicio.nombre} | Total: ${costo:,.2f}"
+        return (f"RESERVA {self.id_reserva} [{self.estado}] | Cliente: {self.cliente.nombre} "
+                f"({self.cliente.identificador}) | Servicio: {self.servicio.nombre} "
+                f"({self.servicio.identificador}) | {self.duracion:g} {self.servicio.unidad_duracion} | "
+                f"Total: ${self.total:,.2f}")

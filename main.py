@@ -1,4 +1,4 @@
-"""Punto de entrada: gestión de clientes y servicios de salas."""
+"""Punto de entrada: gestión de clientes, servicios y reservas."""
 
 from sistema import SistemaGestion
 
