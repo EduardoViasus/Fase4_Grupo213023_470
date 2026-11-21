@@ -1,8 +1,8 @@
-"""Interfaz gráfica moderna en CustomTkinter para Software FJ."""
+"""Interfaz de Software FJ con CustomTkinter."""
 
 import os
 import calendar
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import customtkinter as ctk
 from tkinter import messagebox
 
@@ -228,7 +228,7 @@ class SelectorHora(ctk.CTkToplevel):
 
 
 class Aplicacion(ctk.CTk):
-    """Ventana principal de Software FJ con navegación lateral y tarjetas limpias."""
+    """Ventana principal para clientes, servicios y reservas."""
 
     COLOR_SIDEBAR = "#182c46"
     COLOR_SIDEBAR_ACT = "#244a6b"
@@ -260,7 +260,6 @@ class Aplicacion(ctk.CTk):
 
         self.sistema = sistema
         self.vista_actual = "Clientes"
-        self._temporizador_auto = None
 
         self.title("Software FJ | Gestión de clientes, servicios y reservas")
         self.geometry("1240x820")
@@ -274,10 +273,7 @@ class Aplicacion(ctk.CTk):
         self._construir_sidebar()
         self._construir_area_principal()
         self._actualizar_vistas()
-
-        if getattr(self.sistema, "aviso_log", False):
-            self._mostrar_estado("El archivo de logs se guardará en la carpeta temporal.", es_error=False)
-
+        
     def _construir_sidebar(self):
         """Crea el menú lateral fijo con la marca y los botones de navegación."""
         sidebar = ctk.CTkFrame(self, width=240, corner_radius=0, fg_color=self.COLOR_SIDEBAR)
@@ -286,35 +282,24 @@ class Aplicacion(ctk.CTk):
 
         brand_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
         brand_frame.pack(fill="x", padx=20, pady=(26, 24))
-
-        badge = ctk.CTkLabel(
-            brand_frame, text="FJ", width=42, height=42, corner_radius=10,
-            fg_color="#347bc8", text_color="#ffffff", font=("Segoe UI", 17, "bold")
-        )
-        badge.pack(side="left")
-
         brand_text = ctk.CTkFrame(brand_frame, fg_color="transparent")
-        brand_text.pack(side="left", padx=(12, 0))
+        brand_text.pack(side="left")
         ctk.CTkLabel(
             brand_text, text="Software FJ", text_color="#ffffff",
             font=("Segoe UI", 17, "bold"), anchor="w"
         ).pack(fill="x")
-        ctk.CTkLabel(
-            brand_text, text="Gestión POO • Sin BD", text_color="#bdcde1",
-            font=("Segoe UI", 11), anchor="w"
-        ).pack(fill="x")
 
         ctk.CTkLabel(
-            sidebar, text="FLUJO DE OPERACIÓN", text_color="#aebfd5",
+            sidebar, text="Menú", text_color="#aebfd5",
             font=("Segoe UI", 10, "bold"), anchor="w"
         ).pack(fill="x", padx=24, pady=(4, 8))
 
         self.botones_nav = {}
         opciones = [
-            ("Clientes", "1. Clientes"),
-            ("Servicios", "2. Servicios"),
-            ("Reservas", "3. Reservas"),
-            ("Logs", "4. Registro de Logs"),
+            ("Clientes", "Clientes"),
+            ("Servicios", "Servicios"),
+            ("Reservas", "Reservas"),
+            ("Logs", "Registro de actividad"),
         ]
         for clave, etiqueta in opciones:
             btn = ctk.CTkButton(
@@ -326,47 +311,15 @@ class Aplicacion(ctk.CTk):
             btn.pack(fill="x", padx=14, pady=3)
             self.botones_nav[clave] = btn
 
-        footer = ctk.CTkFrame(sidebar, fg_color="transparent")
-        footer.pack(side="bottom", fill="x", padx=20, pady=20)
-        ctk.CTkFrame(footer, height=1, fg_color="#3b4f68").pack(fill="x", pady=(0, 12))
-        ctk.CTkLabel(
-            footer, text="Equipo Software FJ", text_color="#dae4ef",
-            font=("Segoe UI", 12, "bold"), anchor="w"
-        ).pack(fill="x")
-        ctk.CTkLabel(
-            footer, text="Administración interna", text_color="#b0c1d5",
-            font=("Segoe UI", 11), anchor="w"
-        ).pack(fill="x")
-
     def _construir_area_principal(self):
-        """Crea la barra superior, el área de pantallas y la píldora de estado."""
+        """Crea el contenedor de las pantallas."""
         contenedor = ctk.CTkFrame(self, fg_color=self.COLOR_BG, corner_radius=0)
         contenedor.grid(row=0, column=1, sticky="nsew")
         contenedor.grid_columnconfigure(0, weight=1)
-        contenedor.grid_rowconfigure(1, weight=1)
-
-        topbar = ctk.CTkFrame(
-            contenedor, height=64, corner_radius=0, fg_color=self.COLOR_CARD,
-            border_width=1, border_color=self.COLOR_BORDER
-        )
-        topbar.grid(row=0, column=0, sticky="ew")
-        topbar.grid_propagate(False)
-
-        self.lbl_breadcrumb = ctk.CTkLabel(
-            topbar, text="Espacio de trabajo  /  Clientes",
-            text_color=self.COLOR_TEXT, font=("Segoe UI", 13, "bold")
-        )
-        self.lbl_breadcrumb.pack(side="left", padx=28)
-
-        self.estado = ctk.CTkLabel(
-            topbar, text="  ●  Listo para registrar la primera operación.  ",
-            fg_color="#edf7f3", text_color=self.COLOR_GREEN,
-            corner_radius=14, height=30, font=("Segoe UI", 12, "bold")
-        )
-        self.estado.pack(side="right", padx=28)
+        contenedor.grid_rowconfigure(0, weight=1)
 
         self.cuerpo = ctk.CTkFrame(contenedor, fg_color="transparent")
-        self.cuerpo.grid(row=1, column=0, sticky="nsew", padx=24, pady=20)
+        self.cuerpo.grid(row=0, column=0, sticky="nsew", padx=24, pady=20)
         self.cuerpo.grid_columnconfigure(0, weight=1)
         self.cuerpo.grid_rowconfigure(0, weight=1)
 
@@ -380,7 +333,6 @@ class Aplicacion(ctk.CTk):
     def _cambiar_vista(self, nombre):
         """Muestra la vista seleccionada y resalta su botón en el menú lateral."""
         self.vista_actual = nombre
-        self.lbl_breadcrumb.configure(text=f"Espacio de trabajo  /  {nombre}")
 
         for clave, frame in self.vistas.items():
             if clave == nombre:
@@ -400,17 +352,16 @@ class Aplicacion(ctk.CTk):
     def _crear_tarjeta(self, padre, titulo):
         """Crea una tarjeta blanca con encabezado y borde sutil."""
         card = ctk.CTkFrame(
-            padre, fg_color=self.COLOR_CARD, corner_radius=14,
+            padre, fg_color=self.COLOR_CARD, corner_radius=8,
             border_width=1, border_color=self.COLOR_BORDER
         )
         header = ctk.CTkFrame(card, fg_color="transparent")
         header.pack(fill="x", padx=20, pady=(16, 10))
 
-        ctk.CTkFrame(header, width=4, height=18, corner_radius=2, fg_color=self.COLOR_GREEN).pack(side="left")
         ctk.CTkLabel(
             header, text=titulo, text_color=self.COLOR_TEXT,
             font=("Segoe UI", 15, "bold")
-        ).pack(side="left", padx=(10, 0))
+        ).pack(side="left")
 
         ctk.CTkFrame(card, height=1, fg_color=self.COLOR_BORDER).pack(fill="x")
 
@@ -434,7 +385,7 @@ class Aplicacion(ctk.CTk):
         return entrada
 
     def _selector(self, contenedor, etiqueta, valores, comando=None, editable=False):
-        """Crea una etiqueta y un acordeón desplegable (solo lectura o editable)."""
+        """Crea una etiqueta y un desplegable de solo lectura o editable."""
         ctk.CTkLabel(
             contenedor, text=etiqueta, text_color=self.COLOR_TEXT,
             font=("Segoe UI", 12, "bold"), anchor="w"
@@ -449,8 +400,10 @@ class Aplicacion(ctk.CTk):
         selector.set(valores[0])
         return selector
 
-    def _fila_fecha_hora(self, contenedor):
+    def _fila_fecha_hora(self, contenedor, al_cambiar=None):
         """Crea una fila de 2 columnas con selector de fecha (calendario) y hora de inicio."""
+        ahora = datetime.now()
+        siguiente = ahora.replace(second=0, microsecond=0) + timedelta(minutes=5 - ahora.minute % 5)
         fila = ctk.CTkFrame(contenedor, fg_color="transparent")
         fila.pack(fill="x", pady=(8, 4))
         fila.grid_columnconfigure(0, weight=1)
@@ -469,14 +422,27 @@ class Aplicacion(ctk.CTk):
             box_f, placeholder_text="dd/mm/aaaa", height=38, corner_radius=8,
             border_color="#b8c7d6", fg_color="#ffffff", text_color=self.COLOR_TEXT
         )
-        ent_fecha.insert(0, date.today().strftime("%d/%m/%Y"))
+        ent_fecha.insert(0, siguiente.strftime("%d/%m/%Y"))
         ent_fecha.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
+        def notificar_cambio(evento=None):
+            if al_cambiar is not None:
+                al_cambiar()
+
+        def poner_fecha(valor):
+            ent_fecha.delete(0, "end")
+            ent_fecha.insert(0, valor)
+            notificar_cambio()
+
         def abrir_cal():
-            SelectorCalendario(self, lambda val: (ent_fecha.delete(0, "end"), ent_fecha.insert(0, val)))
+            try:
+                seleccionada = datetime.strptime(ent_fecha.get(), "%d/%m/%Y").date()
+            except ValueError:
+                seleccionada = None
+            SelectorCalendario(self, poner_fecha, seleccionada)
 
         ctk.CTkButton(
-            box_f, text="📅", width=38, height=38, corner_radius=8,
+            box_f, text="...", width=32, height=38, corner_radius=8,
             fg_color="#e2e8f0", hover_color="#cbd5e1", text_color=self.COLOR_TEXT,
             command=abrir_cal
         ).pack(side="right")
@@ -494,22 +460,26 @@ class Aplicacion(ctk.CTk):
             box_h, placeholder_text="HH:MM", height=38, corner_radius=8,
             border_color="#b8c7d6", fg_color="#ffffff", text_color=self.COLOR_TEXT
         )
-        ent_hora.insert(0, datetime.now().strftime("%H:00"))
+        ent_hora.insert(0, siguiente.strftime("%H:%M"))
         ent_hora.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
         def poner_hora(val):
             ent_hora.delete(0, "end")
             ent_hora.insert(0, val)
+            notificar_cambio()
 
         def abrir_reloj():
             SelectorHora(self, poner_hora, ent_hora.get())
 
         ctk.CTkButton(
-            box_h, text="🕒", width=38, height=38, corner_radius=8,
+            box_h, text="...", width=32, height=38, corner_radius=8,
             fg_color="#e2e8f0", hover_color="#cbd5e1", text_color=self.COLOR_TEXT,
             command=abrir_reloj
         ).pack(side="right")
 
+        for campo in (ent_fecha, ent_hora):
+            campo.bind("<KeyRelease>", notificar_cambio)
+            campo.bind("<FocusOut>", notificar_cambio)
         return ent_fecha, ent_hora
 
     def _boton(self, contenedor, texto, comando, variante="primary"):
@@ -539,10 +509,6 @@ class Aplicacion(ctk.CTk):
         head = ctk.CTkFrame(vista, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         ctk.CTkLabel(head, text="Clientes", font=("Segoe UI", 22, "bold"), text_color=self.COLOR_TEXT).pack(anchor="w")
-        ctk.CTkLabel(
-            head, text="Paso 1: Registra y encapsula los datos personales de los clientes en memoria.",
-            font=("Segoe UI", 13), text_color=self.COLOR_MUTED
-        ).pack(anchor="w")
 
         card_form, body_form = self._crear_tarjeta(vista, "Nuevo cliente")
         card_form.configure(width=360)
@@ -557,13 +523,13 @@ class Aplicacion(ctk.CTk):
         }
         self._boton(body_form, "Registrar cliente", self._registrar_cliente, "primary")
 
-        card_list, body_list = self._crear_tarjeta(vista, "Listado de clientes registrados")
+        card_list, body_list = self._crear_tarjeta(vista, "Clientes registrados")
         card_list.grid(row=1, column=1, sticky="nsew")
         self.lista_clientes = ctk.CTkScrollableFrame(body_list, fg_color="transparent")
         self.lista_clientes.pack(fill="both", expand=True)
 
     def _crear_vista_servicios(self):
-        """Construye la pantalla de servicios con acordeones y cotizador conectado a reservas."""
+        """Construye los formularios de servicios y cotización."""
         vista = ctk.CTkScrollableFrame(self.cuerpo, fg_color="transparent")
         vista.grid_columnconfigure(0, weight=1)
         vista.grid_columnconfigure(1, weight=1)
@@ -572,21 +538,17 @@ class Aplicacion(ctk.CTk):
         head = ctk.CTkFrame(vista, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         ctk.CTkLabel(head, text="Servicios", font=("Segoe UI", 22, "bold"), text_color=self.COLOR_TEXT).pack(anchor="w")
-        ctk.CTkLabel(
-            head, text="Paso 2: Configura el catálogo de servicios y calcula cotizaciones para pasarlas a reserva.",
-            font=("Segoe UI", 13), text_color=self.COLOR_MUTED
-        ).pack(anchor="w")
 
         card_srv, body_srv = self._crear_tarjeta(vista, "Nuevo servicio")
         card_srv.grid(row=1, column=0, sticky="nsew", padx=(0, 12))
 
         self.tipo_servicio = self._selector(
-            body_srv, "Tipo de servicio (Subclase)", ["Sala", "Equipo", "Asesoría"], self._mostrar_tipo
+            body_srv, "Tipo de servicio", ["Sala", "Equipo", "Asesoría"], self._mostrar_tipo
         )
         self.campos_servicio = {
             "identificador": self._entrada(body_srv, "Identificador", "S001"),
             "nombre": self._selector(
-                body_srv, "Nombre del servicio (elige o escribe)",
+                body_srv, "Nombre del servicio",
                 self.SUGERENCIAS_SERVICIO["Sala"], editable=True
             ),
         }
@@ -624,7 +586,7 @@ class Aplicacion(ctk.CTk):
         self.cantidad_equipo = self._entrada(equipo, "Cantidad de equipos (1 a 100)", "1", "1")
         self.deposito_equipo = self._entrada(equipo, "Depósito único (0 para omitir)", "50000", "50000")
         ctk.CTkLabel(
-            equipo, text="El conjunto se alquila completo. El depósito se suma al subtotal antes de impuestos/descuentos.",
+            equipo, text="El depósito se cobra una vez por el conjunto, antes de aplicar descuento e impuesto.",
             wraplength=360, justify="left", text_color=self.COLOR_MUTED, font=("Segoe UI", 11)
         ).pack(fill="x", pady=6)
 
@@ -636,7 +598,7 @@ class Aplicacion(ctk.CTk):
         self._mostrar_tipo("Sala")
         self._boton(body_srv, "Registrar servicio", self._registrar_servicio, "primary")
 
-        card_cot, body_cot = self._crear_tarjeta(vista, "Consultar costo (Sobrecarga)")
+        card_cot, body_cot = self._crear_tarjeta(vista, "Cotización")
         card_cot.grid(row=1, column=1, sticky="nsew", padx=(12, 0))
 
         self.servicio_cotizacion = self._selector(
@@ -652,15 +614,15 @@ class Aplicacion(ctk.CTk):
         self.impuesto_cotizacion = self._entrada(body_cot, "Impuesto (%)", "0 a 100", "0")
         self.descuento_cotizacion = self._entrada(body_cot, "Descuento (%)", "0 a 100", "0")
 
-        resumen_cot = ctk.CTkFrame(body_cot, fg_color="#f1f6fc", corner_radius=10, border_width=1, border_color="#d7e4f4")
+        resumen_cot = ctk.CTkFrame(body_cot, fg_color="transparent")
         resumen_cot.pack(fill="x", pady=(14, 4))
-        ctk.CTkLabel(resumen_cot, text="Última cotización:", text_color=self.COLOR_MUTED, font=("Segoe UI", 12)).pack(side="left", padx=14, pady=12)
+        ctk.CTkLabel(resumen_cot, text="Total:", text_color=self.COLOR_MUTED, font=("Segoe UI", 12)).pack(side="left", pady=12)
         self.lbl_resultado_cot = ctk.CTkLabel(resumen_cot, text="$0.00", text_color=self.COLOR_PRIMARY, font=("Segoe UI", 16, "bold"))
         self.lbl_resultado_cot.pack(side="right", padx=14, pady=12)
 
-        self._boton(body_cot, "Consultar costo y enviar a reserva", self._cotizar_y_pasar, "primary")
+        self._boton(body_cot, "Cotizar y preparar reserva", self._cotizar_y_pasar, "primary")
 
-        card_list, body_list = self._crear_tarjeta(vista, "Catálogo de servicios registrados")
+        card_list, body_list = self._crear_tarjeta(vista, "Servicios registrados")
         card_list.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(18, 0))
         self.lista_servicios = ctk.CTkFrame(body_list, fg_color="transparent")
         self.lista_servicios.pack(fill="both", expand=True)
@@ -687,7 +649,7 @@ class Aplicacion(ctk.CTk):
         self.etiqueta_tarifa.configure(text=texto)
 
     def _crear_vista_reservas(self):
-        """Construye la pantalla de creación y gestión dinámica de estados de reservas."""
+        """Construye los formularios y el listado de reservas."""
         vista = ctk.CTkScrollableFrame(self.cuerpo, fg_color="transparent")
         vista.grid_columnconfigure(0, weight=1)
         vista.grid_columnconfigure(1, weight=1)
@@ -696,10 +658,6 @@ class Aplicacion(ctk.CTk):
         head = ctk.CTkFrame(vista, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         ctk.CTkLabel(head, text="Reservas", font=("Segoe UI", 22, "bold"), text_color=self.COLOR_TEXT).pack(anchor="w")
-        ctk.CTkLabel(
-            head, text="Paso 3: Asigna el cliente, fecha/hora de inicio y gestiona el estado de la reserva.",
-            font=("Segoe UI", 13), text_color=self.COLOR_MUTED
-        ).pack(anchor="w")
 
         card_new, body_new = self._crear_tarjeta(vista, "Nueva reserva")
         card_new.grid(row=1, column=0, sticky="nsew", padx=(0, 12))
@@ -714,18 +672,26 @@ class Aplicacion(ctk.CTk):
         )
         self.aviso_reserva.pack(fill="x", pady=(4, 4))
 
-        self.fecha_reserva, self.hora_reserva = self._fila_fecha_hora(body_new)
+        self.fecha_reserva, self.hora_reserva = self._fila_fecha_hora(body_new, self._invalidar_disponibilidad)
 
-        self.horas_reserva = self._entrada(body_new, "Duración (heredada o editable)", "2", "2")
-        self.impuesto_reserva = self._entrada(body_new, "Impuesto (%) (heredado o editable)", "0 a 100", "0")
-        self.descuento_reserva = self._entrada(body_new, "Descuento (%) (heredado o editable)", "0 a 100", "0")
-        self._boton(body_new, "Crear reserva pendiente", self._crear_reserva, "primary")
+        self.horas_reserva = self._entrada(body_new, "Duración", "2", "2")
+        self.horas_reserva.bind("<KeyRelease>", self._invalidar_disponibilidad)
+        self.horas_reserva.bind("<FocusOut>", self._invalidar_disponibilidad)
+        self.impuesto_reserva = self._entrada(body_new, "Impuesto (%)", "0 a 100", "0")
+        self.descuento_reserva = self._entrada(body_new, "Descuento (%)", "0 a 100", "0")
+        self.aviso_disponibilidad = ctk.CTkLabel(
+            body_new, text="Consulta la disponibilidad para este horario.",
+            text_color=self.COLOR_MUTED, wraplength=340, justify="left", anchor="w",
+        )
+        self.aviso_disponibilidad.pack(fill="x", pady=(10, 0))
+        self._boton(body_new, "Consultar disponibilidad", self._consultar_disponibilidad, "neutral")
+        self.btn_crear_reserva = self._boton(body_new, "Crear reserva", self._crear_reserva, "primary")
 
-        card_ges, body_ges = self._crear_tarjeta(vista, "Detalle y gestión de reserva")
+        card_ges, body_ges = self._crear_tarjeta(vista, "Gestionar reserva")
         card_ges.grid(row=1, column=1, sticky="nsew", padx=(12, 0))
 
         self.reserva_elegida = self._selector(
-            body_ges, "Reserva que deseas gestionar", ["Sin registros"],
+            body_ges, "Reserva", ["Sin registros"],
             lambda _: self._actualizar_botones_reserva()
         )
 
@@ -735,17 +701,15 @@ class Aplicacion(ctk.CTk):
         )
         self.lbl_estado_actual.pack(fill="x", pady=(10, 4))
 
-        info_box = ctk.CTkFrame(body_ges, fg_color="#edf7f3", corner_radius=10, border_width=1, border_color="#b2d3c5")
-        info_box.pack(fill="x", pady=10)
-        ctk.CTkLabel(
-            info_box, text="Flujo de estados: Pendiente → Confirmada (procesando automático) → Completada.",
-            wraplength=380, justify="left", text_color="#235e4c", font=("Segoe UI", 12)
-        ).pack(padx=14, pady=12)
-
-        self.btn_avanzar_estado = self._boton(
-            body_ges, "Confirmar reserva", self._avanzar_estado_reserva, "success"
+        self.lbl_horario_reserva = ctk.CTkLabel(
+            body_ges, text="", text_color=self.COLOR_MUTED,
+            wraplength=340, justify="left", anchor="w",
         )
-        self.btn_cancelar_estado = self._boton(
+        self.lbl_horario_reserva.pack(fill="x", pady=8)
+        self.btn_finalizar_reserva = self._boton(
+            body_ges, "Finalizar reserva", lambda: self._gestionar_reserva("Finalizar"), "success"
+        )
+        self.btn_cancelar_reserva = self._boton(
             body_ges, "Cancelar reserva", lambda: self._gestionar_reserva("Cancelar"), "danger"
         )
 
@@ -763,9 +727,9 @@ class Aplicacion(ctk.CTk):
 
         head = ctk.CTkFrame(vista, fg_color="transparent")
         head.grid(row=0, column=0, sticky="ew", pady=(0, 14))
-        ctk.CTkLabel(head, text="Registro de Logs y Excepciones", font=("Segoe UI", 22, "bold"), text_color=self.COLOR_TEXT).pack(side="left")
+        ctk.CTkLabel(head, text="Registro de actividad", font=("Segoe UI", 22, "bold"), text_color=self.COLOR_TEXT).pack(side="left")
         ctk.CTkButton(
-            head, text="Actualizar archivo .log", command=self._refrescar_logs,
+            head, text="Actualizar", command=self._refrescar_logs,
             fg_color=self.COLOR_PRIMARY, hover_color=self.COLOR_PRIMARY_HOV, height=36, corner_radius=8
         ).pack(side="right")
 
@@ -793,21 +757,10 @@ class Aplicacion(ctk.CTk):
         self.caja_logs.see("end")
         self.caja_logs.configure(state="disabled")
 
-    def _mostrar_estado(self, texto, es_error=False):
-        """Actualiza la píldora de estado superior."""
-        if es_error:
-            self.estado.configure(text=f"  ●  {texto}  ", fg_color="#fef2f2", text_color=self.COLOR_DANGER)
-        else:
-            self.estado.configure(text=f"  ●  {texto}  ", fg_color="#edf7f3", text_color=self.COLOR_GREEN)
-
     def _realizar(self, descripcion, accion):
         """Ejecuta una operación controlada por sistema.ejecutar y actualiza la vista."""
         correcto, resultado = self.sistema.ejecutar(descripcion, accion)
         self._actualizar_vistas()
-        self._mostrar_estado(
-            f"{descripcion}: {'completado' if correcto else 'error controlado'} (Ops: {self.sistema.operaciones})",
-            es_error=not correcto
-        )
         if not correcto:
             messagebox.showerror(descripcion, str(resultado), parent=self)
         return correcto, resultado
@@ -874,103 +827,134 @@ class Aplicacion(ctk.CTk):
             self._actualizar_unidades()
 
             messagebox.showinfo(
-                "Cotización lista",
-                f"Total calculado: ${total:,.2f} COP\n\n"
-                "Los datos (servicio, duración, impuesto y descuento) ya quedaron cargados en '3. Reservas'.",
+                "Cotización",
+                f"Total: ${total:,.2f} COP\n\nLos datos se copiaron al formulario de reservas.",
                 parent=self
             )
 
     def _crear_reserva(self):
-        """Crea una reserva pendiente y la selecciona en el panel de gestión."""
+        """Registra el horario, comprueba cruces y crea una reserva activa."""
         fecha = self.fecha_reserva.get().strip()
         hora = self.hora_reserva.get().strip()
         correcto, reserva = self._realizar("Crear reserva", lambda: self.sistema.crear_reserva(
             self._id_seleccionado(self.cliente_reserva), self._id_seleccionado(self.servicio_reserva),
-            self.horas_reserva.get(), self.impuesto_reserva.get(), self.descuento_reserva.get(),
+            self.horas_reserva.get(), fecha=fecha, hora=hora,
+            impuesto=self.impuesto_reserva.get(), descuento=self.descuento_reserva.get(),
         ))
         if correcto:
-            self.sistema.logger.info(f"Reserva {reserva.identificador} programada para {fecha} a las {hora}")
             self.reserva_elegida.set(f"{reserva.identificador} | {reserva.estado}")
             self._actualizar_botones_reserva()
+            self.aviso_disponibilidad.configure(
+                text=f"Horario reservado: {reserva.inicio:%d/%m/%Y %H:%M} a {reserva.fin:%d/%m/%Y %H:%M}.",
+                text_color=self.COLOR_DANGER,
+            )
+            self.btn_crear_reserva.configure(state="disabled")
+
+    def _invalidar_disponibilidad(self, evento=None):
+        """Una consulta anterior deja de ser válida al cambiar el horario."""
+        self.aviso_disponibilidad.configure(
+            text="Consulta la disponibilidad para este horario.", text_color=self.COLOR_MUTED
+        )
+        self.btn_crear_reserva.configure(state="normal")
+
+    def _consultar_disponibilidad(self):
+        correcto, disponible = self._realizar(
+            "Consultar disponibilidad", lambda: self.sistema.consultar_disponibilidad(
+                self._id_seleccionado(self.servicio_reserva), self.fecha_reserva.get(),
+                self.hora_reserva.get(), self.horas_reserva.get(),
+            )
+        )
+        if correcto:
+            self.aviso_disponibilidad.configure(
+                text="Disponible para el horario indicado." if disponible else "Ocupado durante el horario indicado.",
+                text_color=self.COLOR_GREEN if disponible else self.COLOR_DANGER,
+            )
+            self.btn_crear_reserva.configure(state="normal" if disponible else "disabled")
 
     def _gestionar_reserva(self, accion):
-        """Ejecuta confirmar, procesar o cancelar sobre la reserva elegida."""
-        if accion == "Cancelar" and "CANCELADA" in self.reserva_elegida.get().upper():
-            return
+        """Finaliza o cancela la reserva seleccionada."""
+        if accion == "Finalizar":
+            identificador = self._id_seleccionado(self.reserva_elegida)
+            reserva = next((r for r in self.sistema.reservas if r.identificador == identificador), None)
+            if reserva is not None and reserva.estado == "ACTIVA" and datetime.now() < reserva.fin:
+                self._solicitar_finalizacion_anticipada(reserva)
+                return
         self._realizar(f"{accion} reserva", lambda: {
-            "Confirmar": self.sistema.confirmar_reserva,
+            "Finalizar": self.sistema.finalizar_reserva,
             "Cancelar": self.sistema.cancelar_reserva,
-            "Procesar": self.sistema.procesar_reserva,
         }[accion](self._id_seleccionado(self.reserva_elegida)))
 
-    def _completar_automaticamente(self, id_reserva):
-        """Pasa automáticamente una reserva confirmada a completada tras el estado cargando."""
-        self._temporizador_auto = None
-        reserva = next((r for r in self.sistema.reservas if r.identificador == id_reserva), None)
-        if reserva and reserva.estado.upper() == "CONFIRMADA":
-            self._realizar("Procesar reserva", lambda: self.sistema.procesar_reserva(id_reserva))
+    def _solicitar_finalizacion_anticipada(self, reserva):
+        ventana = ctk.CTkToplevel(self)
+        ventana.title(f"Finalizar reserva {reserva.identificador}")
+        ventana.geometry("460x330")
+        ventana.resizable(False, False)
+        ventana.transient(self)
+        ventana.grab_set()
 
-    def _avanzar_estado_reserva(self):
-        """Confirma una reserva pendiente e inicia la transición automática a completada."""
-        texto = self.reserva_elegida.get().upper()
-        if "PENDIENTE" not in texto:
-            return
-        id_res = self._id_seleccionado(self.reserva_elegida)
-        correcto, _ = self._realizar("Confirmar reserva", lambda: self.sistema.confirmar_reserva(id_res))
-        if correcto:
-            if self._temporizador_auto is not None:
-                self.after_cancel(self._temporizador_auto)
-            self._temporizador_auto = self.after(2500, lambda: self._completar_automaticamente(id_res))
+        ctk.CTkLabel(
+            ventana, text=f"Fin pactado: {reserva.fin:%d/%m/%Y %H:%M}\n"
+            "Indica por qué finaliza antes de la hora acordada.",
+            wraplength=410, justify="left", anchor="w",
+        ).pack(fill="x", padx=20, pady=(18, 8))
+        ctk.CTkLabel(
+            ventana, text="Observación obligatoria (máximo 500 caracteres)", anchor="w"
+        ).pack(fill="x", padx=20, pady=(4, 6))
+        observacion = ctk.CTkTextbox(ventana, height=110, wrap="word")
+        observacion.pack(fill="x", padx=20)
+        aviso = ctk.CTkLabel(ventana, text="", text_color=self.COLOR_DANGER, anchor="w")
+        aviso.pack(fill="x", padx=20, pady=(4, 0))
+
+        def guardar():
+            texto = observacion.get("1.0", "end").strip()
+            if not texto:
+                aviso.configure(text="Escribe la razón de la finalización anticipada.")
+                self.sistema.logger.error(
+                    "Intento de finalizar anticipadamente la reserva %s sin observación.",
+                    reserva.identificador,
+                )
+                observacion.focus_set()
+                return
+            correcto, _ = self._realizar(
+                "Finalizar reserva", lambda: self.sistema.finalizar_reserva(
+                    reserva.identificador, observacion=texto,
+                )
+            )
+            if correcto:
+                ventana.destroy()
+
+        botones = ctk.CTkFrame(ventana, fg_color="transparent")
+        botones.pack(fill="x", padx=20, pady=(12, 18))
+        ctk.CTkButton(
+            botones, text="Cancelar", width=130, command=ventana.destroy,
+            fg_color="#e2e8f0", hover_color="#cbd5e1", text_color=self.COLOR_TEXT,
+        ).pack(side="left")
+        ctk.CTkButton(
+            botones, text="Finalizar", width=130, command=guardar,
+            fg_color=self.COLOR_GREEN, hover_color=self.COLOR_GREEN_HOV,
+        ).pack(side="right")
+        observacion.focus_set()
 
     def _actualizar_botones_reserva(self):
-        """Adapta los botones según el estado actual de la reserva seleccionada."""
-        self.btn_avanzar_estado.pack_forget()
-        self.btn_cancelar_estado.pack_forget()
-
-        texto = self.reserva_elegida.get()
-        if texto == "Sin registros":
+        """Las reservas activas se pueden finalizar o cancelar."""
+        identificador = self._id_seleccionado(self.reserva_elegida)
+        reserva = next((r for r in self.sistema.reservas if r.identificador == identificador), None)
+        if reserva is None:
             self.lbl_estado_actual.configure(text="Estado actual: Sin registros")
-            self.btn_avanzar_estado.configure(text="Confirmar reserva", state="disabled", fg_color="#94a3b8")
-            self.btn_avanzar_estado.pack(fill="x", pady=(12, 0))
-            self.btn_cancelar_estado.configure(text="Cancelar reserva", state="disabled", fg_color="#94a3b8")
-            self.btn_cancelar_estado.pack(fill="x", pady=(12, 0))
+            self.lbl_horario_reserva.configure(text="")
+            self.btn_finalizar_reserva.configure(state="disabled")
+            self.btn_cancelar_reserva.configure(state="disabled")
             return
-
-        estado = texto.split(" | ", 1)[1].strip() if " | " in texto else "PENDIENTE"
-        estado_mayus = estado.upper()
-        self.lbl_estado_actual.configure(text=f"Estado actual: {estado_mayus}")
-
-        if estado_mayus == "PENDIENTE":
-            # Cancelar solo está presente cuando la reserva está en Pendiente (antes de confirmar)
-            self.btn_avanzar_estado.configure(
-                text="Confirmar reserva", state="normal",
-                fg_color=self.COLOR_GREEN, hover_color=self.COLOR_GREEN_HOV
-            )
-            self.btn_avanzar_estado.pack(fill="x", pady=(12, 0))
-            self.btn_cancelar_estado.configure(
-                text="Cancelar reserva", state="normal",
-                fg_color=self.COLOR_DANGER, hover_color=self.COLOR_DANGER_HOV
-            )
-            self.btn_cancelar_estado.pack(fill="x", pady=(12, 0))
-        elif estado_mayus == "CONFIRMADA":
-            # Estado intermedio tipo cargando; pasa solo a Completada sin mostrar Cancelar
-            self.btn_avanzar_estado.configure(
-                text="⏳  Confirmada (procesando...)", state="normal",
-                fg_color=self.COLOR_PRIMARY, hover_color=self.COLOR_PRIMARY
-            )
-            self.btn_avanzar_estado.pack(fill="x", pady=(12, 0))
-        elif estado_mayus == "COMPLETADA":
-            self.btn_avanzar_estado.configure(
-                text="✓  Reserva completada", state="normal",
-                fg_color=self.COLOR_GREEN, hover_color=self.COLOR_GREEN
-            )
-            self.btn_avanzar_estado.pack(fill="x", pady=(12, 0))
-        else:
-            self.btn_cancelar_estado.configure(
-                text="✕  Reserva cancelada", state="normal",
-                fg_color=self.COLOR_DANGER, hover_color=self.COLOR_DANGER
-            )
-            self.btn_cancelar_estado.pack(fill="x", pady=(12, 0))
+        activa = reserva.estado == "ACTIVA"
+        self.lbl_estado_actual.configure(text=f"Estado actual: {reserva.estado}")
+        horario = f"Inicio: {reserva.inicio:%d/%m/%Y %H:%M}\nFin pactado: {reserva.fin:%d/%m/%Y %H:%M}"
+        if reserva.fecha_finalizacion is not None:
+            horario += f"\nFin real: {reserva.fecha_finalizacion:%d/%m/%Y %H:%M:%S}"
+            if reserva.observacion_finalizacion:
+                horario += f"\nObservación: {reserva.observacion_finalizacion}"
+        self.lbl_horario_reserva.configure(text=horario)
+        self.btn_finalizar_reserva.configure(state="normal" if activa else "disabled")
+        self.btn_cancelar_reserva.configure(state="normal" if activa else "disabled")
 
     def _renderizar_tarjetas_lista(self, contenedor, items, construir_fila):
         """Pinta una tarjeta por cada registro o un mensaje vacío si no hay datos."""
@@ -978,10 +962,8 @@ class Aplicacion(ctk.CTk):
             widget.destroy()
 
         if not items:
-            vacio = ctk.CTkFrame(contenedor, fg_color="#f8fafc", corner_radius=10)
-            vacio.pack(fill="x", pady=8)
             ctk.CTkLabel(
-                vacio, text="Todavía no hay registros en esta sección.",
+                contenedor, text="Sin registros.",
                 text_color=self.COLOR_MUTED, font=("Segoe UI", 13)
             ).pack(pady=28)
             return
@@ -1013,23 +995,18 @@ class Aplicacion(ctk.CTk):
         ))
 
         def pintar_servicio(fila, s):
-            ctk.CTkLabel(fila, text=s.describir(), text_color=self.COLOR_TEXT, font=("Segoe UI", 13), justify="left", anchor="w").pack(side="left", padx=16, pady=12)
-            bg = "#dcfce7" if s.disponible else "#fee2e2"
-            fg = "#166534" if s.disponible else "#991b1b"
-            txt = "Disponible" if s.disponible else "Ocupado"
-            ctk.CTkLabel(fila, text=f"  {txt}  ", fg_color=bg, text_color=fg, corner_radius=12, font=("Segoe UI", 11, "bold")).pack(side="right", padx=16)
+            etiqueta = ctk.CTkLabel(fila, text=s.describir(), text_color=self.COLOR_TEXT, font=("Segoe UI", 13), justify="left", anchor="w")
+            etiqueta.pack(fill="x", padx=16, pady=(12, 4))
+            fila.bind("<Configure>", lambda evento: etiqueta.configure(wraplength=max(160, evento.width - 32)))
+            activas = sum(r.estado == "ACTIVA" and r.servicio.identificador == s.identificador for r in reservas)
+            ctk.CTkLabel(fila, text=f"Reservas activas: {activas}", text_color=self.COLOR_MUTED, font=("Segoe UI", 12)).pack(anchor="w", padx=16, pady=(0, 12))
 
         self._renderizar_tarjetas_lista(self.lista_servicios, servicios, pintar_servicio)
 
         def pintar_reserva(fila, r):
-            ctk.CTkLabel(fila, text=r.describir(), text_color=self.COLOR_TEXT, font=("Segoe UI", 13), justify="left", anchor="w").pack(side="left", padx=16, pady=12)
-            colores_estado = {
-                "CONFIRMADA": ("#dcfce7", "#166534"),
-                "CANCELADA": ("#fee2e2", "#991b1b"),
-                "COMPLETADA": ("#e0e7ff", "#1e40af"),
-            }
-            bg, fg = colores_estado.get(r.estado.upper(), ("#fef3c7", "#92400e"))
-            ctk.CTkLabel(fila, text=f"  {r.estado}  ", fg_color=bg, text_color=fg, corner_radius=12, font=("Segoe UI", 11, "bold")).pack(side="right", padx=16)
+            etiqueta = ctk.CTkLabel(fila, text=r.describir(), text_color=self.COLOR_TEXT, font=("Segoe UI", 13), justify="left", anchor="w")
+            etiqueta.pack(fill="x", padx=16, pady=12)
+            fila.bind("<Configure>", lambda evento: etiqueta.configure(wraplength=max(160, evento.width - 32)))
 
         self._renderizar_tarjetas_lista(self.lista_reservas, reservas, pintar_reserva)
 
@@ -1054,7 +1031,8 @@ class Aplicacion(ctk.CTk):
                 aviso.configure(text="Registra y selecciona un servicio.")
             else:
                 minimo, maximo = servicio.rango_duracion
-                aviso.configure(text=f"Unidad: {servicio.unidad_duracion}  •  Rango permitido: {minimo:g} a {maximo:g}")
+                aviso.configure(text=f"Duración en {servicio.unidad_duracion}: de {minimo:g} a {maximo:g}.")
+        self._invalidar_disponibilidad()
 
     def report_callback_exception(self, tipo, error, traza):
         """Captura errores inesperados de Tkinter sin cerrar la ventana."""

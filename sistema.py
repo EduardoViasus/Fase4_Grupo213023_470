@@ -1,10 +1,14 @@
 """Gestión de listas y punto común para controlar errores y registrar los eventos."""
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from tempfile import gettempdir
 
-from excepciones import DatosInvalidosError, DuplicadoError, ErrorSistema, NoEncontradoError
+from excepciones import (
+    DatosInvalidosError, DuplicadoError, ErrorSistema, NoEncontradoError,
+    ServicioNoDisponibleError,
+)
 from modelos import (
     Cliente, Servicio, Reserva, ReservaSala, AlquilerEquipo,
     AsesoriaEspecializada, validar_identificador,
@@ -131,17 +135,32 @@ class SistemaGestion:
         servicio = self.buscar_servicio(servicio_id)
         return servicio.calcular_costo(duracion, impuesto, descuento)
 
-    def crear_reserva(self, cliente_id, servicio_id, duracion, impuesto=0, descuento=0):
+    def _buscar_cruce(self, servicio_id, inicio, fin):
+        for reserva in self.__reservas:
+            if reserva.servicio.identificador == servicio_id and reserva.se_cruza(inicio, fin):
+                return reserva
+        return None
+
+    def consultar_disponibilidad(self, servicio_id, fecha, hora, duracion):
+        servicio = self.buscar_servicio(servicio_id)
+        inicio, fin = servicio.calcular_intervalo(fecha, hora, duracion)
+        if inicio < datetime.now():
+            raise DatosInvalidosError("Selecciona una fecha y hora futuras.")
+        return self._buscar_cruce(servicio.identificador, inicio, fin) is None
+
+    def crear_reserva(self, cliente_id, servicio_id, duracion, fecha, hora,
+                      impuesto=0, descuento=0):
         cliente = self.buscar_cliente(cliente_id)
         servicio = self.buscar_servicio(servicio_id)
         identificador = f"R{len(self.__reservas) + 1:03d}"
-        reserva = Reserva(identificador, cliente, servicio, duracion, impuesto, descuento)
+        reserva = Reserva(identificador, cliente, servicio, duracion, fecha, hora, impuesto, descuento)
+        cruce = self._buscar_cruce(servicio.identificador, reserva.inicio, reserva.fin)
+        if cruce is not None:
+            raise ServicioNoDisponibleError(
+                f"El servicio {servicio.identificador} está ocupado por la reserva {cruce.identificador}, "
+                f"del {cruce.inicio:%d/%m/%Y %H:%M} al {cruce.fin:%d/%m/%Y %H:%M}."
+            )
         self.__reservas.append(reserva)
-        return reserva
-
-    def confirmar_reserva(self, identificador):
-        reserva = self.buscar_reserva(identificador)
-        reserva.confirmar()
         return reserva
 
     def cancelar_reserva(self, identificador):
@@ -149,9 +168,16 @@ class SistemaGestion:
         reserva.cancelar()
         return reserva
 
-    def procesar_reserva(self, identificador):
+    def finalizar_reserva(self, identificador, observacion=""):
         reserva = self.buscar_reserva(identificador)
-        reserva.procesar()
+        reserva.finalizar(observacion=observacion)
+        self.logger.info(
+            "Reserva %s finalizada%s | Fin pactado: %s | Fin real: %s | Observación: %s",
+            reserva.identificador, " anticipadamente" if reserva.finalizacion_anticipada else "",
+            reserva.fin.strftime("%d/%m/%Y %H:%M"),
+            reserva.fecha_finalizacion.strftime("%d/%m/%Y %H:%M:%S"),
+            reserva.observacion_finalizacion or "Sin observación",
+        )
         return reserva
 
     def cerrar(self):

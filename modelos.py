@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 from math import isfinite
 import re
 
 from excepciones import (
     CalculoError, DatosInvalidosError, ErrorSistema, OperacionNoPermitidaError,
-    ReservaError, ServicioNoDisponibleError,
+    ReservaError,
 )
 
 # Funciones de validacion
@@ -41,6 +42,19 @@ def validar_entero(valor, campo, minimo, maximo):
     if not numero.is_integer():
         raise DatosInvalidosError(f"{campo}: debe ser un número entero.")
     return int(numero)
+
+
+def validar_fecha_hora(fecha, hora):
+    fecha = validar_texto(fecha, "Fecha", minimo=10, maximo=10)
+    hora = validar_texto(hora, "Hora", minimo=5, maximo=5)
+    if not re.fullmatch(r"[0-9]{2}/[0-9]{2}/[0-9]{4}", fecha):
+        raise DatosInvalidosError("Fecha: usa el formato dd/mm/aaaa.")
+    if not re.fullmatch(r"[0-9]{2}:[0-9]{2}", hora):
+        raise DatosInvalidosError("Hora: usa el formato HH:MM de 24 horas.")
+    try:
+        return datetime.strptime(f"{fecha} {hora}", "%d/%m/%Y %H:%M")
+    except ValueError as error:
+        raise DatosInvalidosError("La fecha o la hora no son válidas.") from error
 
 
 class Entidad(ABC):
@@ -119,7 +133,6 @@ class Servicio(Entidad):
         super().__init__(identificador)
         self.nombre = nombre
         self.tarifa_base = tarifa_base
-        self.__reserva_activa = None
 
     @property
     def nombre(self):
@@ -145,20 +158,15 @@ class Servicio(Entidad):
     def unidad_duracion(self):
         return "horas"
 
-    @property
-    def disponible(self):
-        return self.__reserva_activa is None
-
-    def ocupar(self, reserva_id):
-        reserva_id = validar_identificador(reserva_id)
-        if not self.disponible:
-            raise ServicioNoDisponibleError(f"El servicio {self.identificador} está ocupado.")
-        self.__reserva_activa = reserva_id
-
-    def liberar(self, reserva_id):
-        if self.__reserva_activa != reserva_id:
-            raise OperacionNoPermitidaError("Esta reserva no tiene ocupado el servicio.")
-        self.__reserva_activa = None
+    def calcular_intervalo(self, fecha, hora, duracion):
+        inicio = validar_fecha_hora(fecha, hora)
+        tiempo = self.validar_parametros(duracion)
+        try:
+            periodo = timedelta(days=tiempo) if self.unidad_duracion == "días" else timedelta(hours=tiempo)
+            fin = inicio + periodo
+        except OverflowError as error:
+            raise DatosInvalidosError("La duración excede las fechas admitidas.") from error
+        return inicio, fin
 
     def _aplicar_ajustes(self, subtotal, impuesto, descuento):
         impuesto = validar_numero(impuesto, "Impuesto (%)", 0, 100)
@@ -314,22 +322,26 @@ class AsesoriaEspecializada(Servicio):
 
 # Clase Reserva
 class Reserva(Entidad):
-    def __init__(self, id_reserva, cliente, servicio, duracion, impuesto=0, descuento=0):
+    def __init__(self, id_reserva, cliente, servicio, duracion, fecha, hora,
+                 impuesto=0, descuento=0):
         super().__init__(id_reserva)
         if not isinstance(cliente, Cliente):
             raise DatosInvalidosError("Reserva: Cliente no válido.")
         if not isinstance(servicio, Servicio):
             raise DatosInvalidosError("Reserva: Servicio no válido.")
             
-        if not servicio.disponible:
-            raise ServicioNoDisponibleError(f"El servicio {servicio.identificador} está ocupado.")
         self.__cliente = cliente
         self.__servicio = servicio
         self.__duracion = servicio.validar_parametros(duracion)
+        self.__inicio, self.__fin = servicio.calcular_intervalo(fecha, hora, self.duracion)
+        if self.inicio < datetime.now():
+            raise DatosInvalidosError("La reserva debe comenzar en una fecha y hora futuras.")
         self.__impuesto = validar_numero(impuesto, "Impuesto (%)", 0, 100)
         self.__descuento = validar_numero(descuento, "Descuento (%)", 0, 100)
         self.__total = self.calcular_costo_total()
-        self.__estado = "PENDIENTE"
+        self.__estado = "ACTIVA"
+        self.__fecha_finalizacion = None
+        self.__observacion_finalizacion = ""
 
     @property
     def id_reserva(self):
@@ -348,6 +360,14 @@ class Reserva(Entidad):
         return self.__duracion
 
     @property
+    def inicio(self):
+        return self.__inicio
+
+    @property
+    def fin(self):
+        return self.__fin
+
+    @property
     def total(self):
         return self.__total
 
@@ -355,17 +375,25 @@ class Reserva(Entidad):
     def estado(self):
         return self.__estado
 
-    def confirmar(self):
-        if self.estado != "PENDIENTE":
-            raise OperacionNoPermitidaError("Solo puedes confirmar una reserva pendiente.")
-        self.servicio.ocupar(self.identificador)
-        self.__estado = "CONFIRMADA"
+    @property
+    def fecha_finalizacion(self):
+        return self.__fecha_finalizacion
+
+    @property
+    def observacion_finalizacion(self):
+        return self.__observacion_finalizacion
+
+    @property
+    def finalizacion_anticipada(self):
+        return self.fecha_finalizacion is not None and self.fecha_finalizacion < self.fin
+
+    def se_cruza(self, inicio, fin):
+        """Dos reservas consecutivas pueden compartir la hora de salida/entrada."""
+        return self.estado == "ACTIVA" and self.inicio < fin and inicio < self.fin
 
     def cancelar(self):
-        if self.estado not in ("PENDIENTE", "CONFIRMADA"):
+        if self.estado != "ACTIVA":
             raise OperacionNoPermitidaError("La reserva ya terminó o ya fue cancelada.")
-        if self.estado == "CONFIRMADA":
-            self.servicio.liberar(self.identificador)
         self.__estado = "CANCELADA"
 
     def calcular_costo_total(self, impuesto=None, descuento=None):
@@ -375,22 +403,38 @@ class Reserva(Entidad):
             descuento = self.__descuento
         return self.servicio.calcular_costo(self.duracion, impuesto, descuento)
 
-    def procesar(self):
-        if self.estado != "CONFIRMADA":
-            raise OperacionNoPermitidaError("Primero debes confirmar la reserva.")
+    def finalizar(self, observacion=""):
+        if self.estado != "ACTIVA":
+            raise OperacionNoPermitidaError("Solo puedes finalizar una reserva activa.")
+        momento = datetime.now()
+        if not isinstance(observacion, str):
+            raise DatosInvalidosError("La observación debe ser un texto.")
+        observacion = " ".join(observacion.split())
+        if momento < self.fin or observacion:
+            observacion = validar_texto(observacion, "Observación de finalización", minimo=1, maximo=500)
         try:
             total = self.calcular_costo_total()
             if not isfinite(total) or total < 0 or round(total, 2) != self.total:
                 raise CalculoError("El total no coincide con el valor original de la reserva.")
-            self.servicio.liberar(self.identificador)
         except (ErrorSistema, ArithmeticError, TypeError, ValueError) as error:
-            raise ReservaError("No se pudo completar la reserva; revisa la causa en el log.") from error
+            raise ReservaError("No se pudo finalizar la reserva; revisa la causa en el log.") from error
         else:
-            self.__estado = "COMPLETADA"
+            self.__fecha_finalizacion = momento
+            self.__observacion_finalizacion = observacion
+            self.__estado = "FINALIZADA"
             return self.total
 
     def describir(self):
-        return (f"RESERVA {self.id_reserva} [{self.estado}] | Cliente: {self.cliente.nombre} "
+        descripcion = (f"RESERVA {self.id_reserva} [{self.estado}] | Cliente: {self.cliente.nombre} "
                 f"({self.cliente.identificador}) | Servicio: {self.servicio.nombre} "
-                f"({self.servicio.identificador}) | {self.duracion:g} {self.servicio.unidad_duracion} | "
+                f"({self.servicio.identificador}) | "
+                f"Inicio: {self.inicio:%d/%m/%Y %H:%M} | Fin pactado: {self.fin:%d/%m/%Y %H:%M} | "
+                f"{self.duracion:g} {self.servicio.unidad_duracion} | "
                 f"Total: ${self.total:,.2f}")
+        if self.fecha_finalizacion is not None:
+            descripcion += f" | Fin real: {self.fecha_finalizacion:%d/%m/%Y %H:%M:%S}"
+            if self.finalizacion_anticipada:
+                descripcion += " | Finalización anticipada"
+            if self.observacion_finalizacion:
+                descripcion += f" | Observación: {self.observacion_finalizacion}"
+        return descripcion
