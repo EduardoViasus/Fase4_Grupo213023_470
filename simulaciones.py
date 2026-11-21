@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from sistema import SistemaGestion
 from modelos import AlquilerEquipo, AsesoriaEspecializada
 
@@ -10,7 +11,6 @@ def ejecutar_simulaciones():
         print(f"No se pudo abrir el archivo de logs: {error}")
         return 1
 
-    # Se conservan los ejemplos del pull request; el alta pasa por un método público.
     def crear_equipo():
         equipo = AlquilerEquipo("E001", "Laptop Gamer", 25000, 100000)
         return sistema.agregar_servicio(equipo)
@@ -19,13 +19,18 @@ def ejecutar_simulaciones():
         asesoria = AsesoriaEspecializada("A001", "Consultoría Software", 80000, "Ing. Daniela")
         return sistema.agregar_servicio(asesoria)
 
-    def cambiar_tarifa_asesoria():
-        servicio = sistema.buscar_servicio("A002")
-        servicio.tarifa_base = 90000
-        return servicio
+    ahora = datetime.now()
+    fecha = (ahora + timedelta(days=1)).strftime("%d/%m/%Y")
+    siguiente = (ahora + timedelta(days=2)).strftime("%d/%m/%Y")
+    pasada = (ahora - timedelta(days=1)).strftime("%d/%m/%Y")
+
+    def comprobar_disponibilidad(servicio_id, dia, hora, duracion, esperado):
+        disponible = sistema.consultar_disponibilidad(servicio_id, dia, hora, duracion)
+        if disponible != esperado:
+            raise AssertionError(f"Se esperaba disponibilidad {esperado}, se obtuvo {disponible}.")
+        return "Disponible" if disponible else "Ocupado"
 
     # Descripción, acción y resultado de éxito/error esperado.
-    # Las primeras diez operaciones corresponden a los casos del pull request.
     operaciones = [
         ("Registrar cliente válido", lambda: sistema.registrar_cliente(
             "C101", "Ana Pérez", "ana@correo.com", "3001234567"), True),
@@ -33,6 +38,8 @@ def ejecutar_simulaciones():
             "C102", "Carlos Ruiz", "carlos-correo-mal", "3119876543"), False),
         ("Registrar cliente con teléfono inválido", lambda: sistema.registrar_cliente(
             "C103", "Beatriz Gómez", "beatriz@correo.com", "ABC3000000"), False),
+        ("Registrar un segundo cliente válido", lambda: sistema.registrar_cliente(
+            "C102", "Carlos Ruiz", "carlos@correo.com", "3119876543"), True),
         ("Registrar servicio de sala", lambda: sistema.registrar_servicio(
             "S001", "Sala Ejecutiva", 45000, 15), True),
         ("Intentar duplicar servicio S001", lambda: sistema.registrar_servicio(
@@ -55,21 +62,46 @@ def ejecutar_simulaciones():
         ("Rechazar capacidad fraccionaria", lambda: sistema.registrar_servicio(
             "S002", "Sala secundaria", 30000, 2.5), False),
         ("Controlar parámetros faltantes", lambda: sistema.registrar_cliente("C104"), False),
-        ("Crear reserva R001 de equipo por día", lambda: sistema.crear_reserva(
-            "C101", "E001", 2, impuesto=19, descuento=10), True),
-        ("Confirmar R001", lambda: sistema.confirmar_reserva("R001"), True),
-        ("Rechazar servicio ocupado", lambda: sistema.crear_reserva("C101", "E001", 1), False),
-        ("Completar R001 y liberar el equipo", lambda: sistema.procesar_reserva("R001"), True),
-        ("Rechazar cancelación de reserva completada", lambda: sistema.cancelar_reserva("R001"), False),
-        ("Crear reserva R002 de sala", lambda: sistema.crear_reserva("C101", "S001", 2), True),
-        ("Rechazar procesamiento sin confirmar", lambda: sistema.procesar_reserva("R002"), False),
-        ("Confirmar R002", lambda: sistema.confirmar_reserva("R002"), True),
-        ("Cancelar R002 y liberar la sala", lambda: sistema.cancelar_reserva("R002"), True),
-        ("Crear reserva R003 de asesoría", lambda: sistema.crear_reserva("C101", "A002", 1), True),
-        ("Confirmar R003", lambda: sistema.confirmar_reserva("R003"), True),
-        ("Cambiar tarifa mediante una propiedad validada", cambiar_tarifa_asesoria, True),
-        ("Detectar costo inconsistente sin completar R003", lambda: sistema.procesar_reserva("R003"), False),
-        ("Cancelar R003 después del error de costo", lambda: sistema.cancelar_reserva("R003"), True),
+        ("Crear R001: cliente uno, sala de 10:00 a 12:00", lambda: sistema.crear_reserva(
+            "C101", "S001", 2, fecha=fecha, hora="10:00"), True),
+        ("Comprobar que el horario de R001 está ocupado", lambda: comprobar_disponibilidad(
+            "S001", fecha, "10:00", 2, False), True),
+        ("Rechazar al cliente dos en el mismo horario", lambda: sistema.crear_reserva(
+            "C102", "S001", 2, fecha=fecha, hora="10:00"), False),
+        ("Rechazar un cruce parcial a las 11:00", lambda: sistema.crear_reserva(
+            "C102", "S001", 2, fecha=fecha, hora="11:00"), False),
+        ("Rechazar un horario que contiene a R001", lambda: sistema.crear_reserva(
+            "C102", "S001", 4, fecha=fecha, hora="09:00"), False),
+        ("Crear R002 justo cuando termina R001", lambda: sistema.crear_reserva(
+            "C102", "S001", 1, fecha=fecha, hora="12:00"), True),
+        ("Crear R003 de equipo por un día", lambda: sistema.crear_reserva(
+            "C101", "E001", 1, fecha=fecha, hora="10:00"), True),
+        ("Rechazar cruce de equipo al día siguiente", lambda: sistema.crear_reserva(
+            "C102", "E001", 1, fecha=siguiente, hora="09:00"), False),
+        ("Rechazar finalización anticipada sin observación", lambda: sistema.finalizar_reserva("R001"), False),
+        ("Cancelar R001 y liberar su horario", lambda: sistema.cancelar_reserva("R001"), True),
+        ("Comprobar que la cancelación libera el intervalo", lambda: comprobar_disponibilidad(
+            "S001", fecha, "10:00", 2, True), True),
+        ("Crear R004 para el cliente dos en el horario liberado", lambda: sistema.crear_reserva(
+            "C102", "S001", 2, fecha=fecha, hora="10:00"), True),
+        ("Rechazar otra cancelación de R001", lambda: sistema.cancelar_reserva("R001"), False),
+        ("Rechazar finalizar una reserva cancelada", lambda: sistema.finalizar_reserva("R001"), False),
+        ("Crear R005 de la misma sala en otra fecha", lambda: sistema.crear_reserva(
+            "C101", "S001", 2, fecha=siguiente, hora="10:00"), True),
+        ("Rechazar una observación vacía", lambda: sistema.finalizar_reserva(
+            "R005", observacion="   \n  "), False),
+        ("Finalizar R005 anticipadamente con observación", lambda: sistema.finalizar_reserva(
+            "R005", observacion="El cliente solicitó terminar antes del tiempo reservado."), True),
+        ("Comprobar que la finalización libera el horario restante", lambda: comprobar_disponibilidad(
+            "S001", siguiente, "10:00", 2, True), True),
+        ("Rechazar otra finalización de R005", lambda: sistema.finalizar_reserva(
+            "R005", observacion="Segundo intento."), False),
+        ("Rechazar fecha inexistente", lambda: sistema.crear_reserva(
+            "C101", "S001", 2, fecha="31/02/2099", hora="10:00"), False),
+        ("Rechazar hora incorrecta", lambda: sistema.crear_reserva(
+            "C101", "S001", 2, fecha=fecha, hora="25:00"), False),
+        ("Rechazar una reserva en el pasado", lambda: sistema.crear_reserva(
+            "C101", "S001", 2, fecha=pasada, hora="10:00"), False),
         ("Rechazar duración no finita", lambda: sistema.cotizar("S001", "nan"), False),
         ("Controlar un error aritmético inesperado", lambda: 10 / 0, False),
         ("Continuar con un cliente válido después del error", lambda: sistema.registrar_cliente(

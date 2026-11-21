@@ -1,7 +1,223 @@
-2026-11-12 00:30:49,772 | INFO | Inicio de Software FJ; listas vacías en memoria.
-2026-11-12 00:31:11,738 | INFO | Cierre de Software FJ. Operaciones realizadas: 0
-2026-11-17 12:50:25,654 | INFO | Inicio de Software FJ; listas vacías en memoria.
-2026-11-17 12:54:34,174 | INFO | Cierre de Software FJ. Operaciones realizadas: 0
-2026-11-17 12:56:09,361 | INFO | Inicio de Software FJ; listas vacías en memoria.
-2026-11-17 13:00:52,051 | INFO | Inicio de Software FJ; listas vacías en memoria.
-2026-11-17 13:00:59,330 | INFO | Cierre de Software FJ. Operaciones realizadas: 0
+2026-11-21 11:25:58,559 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-21 11:17:13,144 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-21 11:17:40,220 | INFO | Registrar cliente: operación exitosa. Cliente: EDUARDO VIASUS (ID: S001) | Correo: harold.v.s@hotmail.com | Tel: 3042199808
+2026-11-21 11:17:40,220 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-21 11:17:40,226 | ERROR | Error en un callback de la interfaz
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tkinter/__init__.py", line 2093, in __call__
+    return self.func(*args)
+           ~~~~~~~~~^^^^^^^
+  File "/opt/homebrew/lib/python3.14/site-packages/customtkinter/windows/widgets/ctk_button.py", line 564, in _on_release
+    self._command()
+    ~~~~~~~~~~~~~^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 806, in _registrar_cliente
+    correcto, _ = self._realizar("Registrar cliente", lambda: self.sistema.registrar_cliente(
+                  ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **{nombre: campo.get() for nombre, campo in self.campos_cliente.items()}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ))
+    ^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 796, in _realizar
+    self._mostrar_estado(
+    ~~~~~~~~~~~~~~~~~~~~^
+        f"{descripcion}: {'completado' if correcto else 'error controlado'} (Ops: {self.sistema.operaciones})",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        es_error=not correcto
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 790, in _mostrar_estado
+    self.estado.configure(text=f"  ●  {texto}  ", fg_color="#edf7f3", text_color=self.COLOR_GREEN)
+    ^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tkinter/__init__.py", line 2571, in __getattr__
+    return getattr(self.tk, attr)
+AttributeError: '_tkinter.tkapp' object has no attribute 'estado'2026-11-21 11:27:12,594 | INFO | Registrar cliente: operación exitosa. Cliente: EDUARDO VIASUS (ID: S001) | Correo: haroldviasus@gmail.com | Tel: 3042199808
+2026-11-21 11:27:12,594 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-21 11:27:52,260 | INFO | Registrar servicio: operación exitosa. EQUIPO: Proyector HD + pantalla (ID: S001) | 1 unidades | Tarifa/unidad/hora: $6,000.00 | Depósito único: $50,000.00
+2026-11-21 11:27:52,260 | INFO | Fin de la operación 2: Registrar servicio
+2026-11-21 11:28:26,309 | INFO | Crear reserva: operación exitosa. RESERVA R001 [PENDIENTE] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:28:26,310 | INFO | Fin de la operación 3: Crear reserva
+2026-11-21 11:28:26,317 | INFO | Reserva R001 programada para 27/11/2026 a las 11:00
+2026-11-21 11:28:40,193 | INFO | Confirmar reserva: operación exitosa. RESERVA R001 [CONFIRMADA] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:28:40,193 | INFO | Fin de la operación 4: Confirmar reserva
+2026-11-21 11:28:42,702 | INFO | Procesar reserva: operación exitosa. RESERVA R001 [COMPLETADA] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:28:42,702 | INFO | Fin de la operación 5: Procesar reserva
+2026-11-21 11:29:30,775 | INFO | Crear reserva: operación exitosa. RESERVA R002 [PENDIENTE] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:29:30,775 | INFO | Fin de la operación 6: Crear reserva
+2026-11-21 11:29:30,783 | INFO | Reserva R002 programada para 27/11/2026 a las 11:00
+2026-11-21 11:29:35,592 | INFO | Confirmar reserva: operación exitosa. RESERVA R002 [CONFIRMADA] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:29:35,592 | INFO | Fin de la operación 7: Confirmar reserva
+2026-11-21 11:29:38,101 | INFO | Procesar reserva: operación exitosa. RESERVA R002 [COMPLETADA] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:29:38,101 | INFO | Fin de la operación 8: Procesar reserva
+2026-11-21 11:30:05,491 | INFO | Registrar cliente: operación exitosa. Cliente: DANIELA (ID: S002) | Correo: jdjdjdj@gmail.com | Tel: 1234567890
+2026-11-21 11:30:05,491 | INFO | Fin de la operación 9: Registrar cliente
+2026-11-21 11:30:14,874 | INFO | Crear reserva: operación exitosa. RESERVA R003 [PENDIENTE] | Cliente: EDUARDO VIASUS (S001) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:30:14,874 | INFO | Fin de la operación 10: Crear reserva
+2026-11-21 11:30:14,884 | INFO | Reserva R003 programada para 27/11/2026 a las 11:00
+2026-11-21 11:30:18,541 | INFO | Crear reserva: operación exitosa. RESERVA R004 [PENDIENTE] | Cliente: DANIELA (S002) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:30:18,541 | INFO | Fin de la operación 11: Crear reserva
+2026-11-21 11:30:18,552 | INFO | Reserva R004 programada para 27/11/2026 a las 11:00
+2026-11-21 11:30:36,108 | INFO | Confirmar reserva: operación exitosa. RESERVA R004 [CONFIRMADA] | Cliente: DANIELA (S002) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:30:36,108 | INFO | Fin de la operación 12: Confirmar reserva
+2026-11-21 11:30:38,620 | INFO | Procesar reserva: operación exitosa. RESERVA R004 [COMPLETADA] | Cliente: DANIELA (S002) | Servicio: Proyector HD + pantalla (S001) | 2 horas | Total: $62,000.00
+2026-11-21 11:30:38,621 | INFO | Fin de la operación 13: Procesar reserva
+2026-11-21 11:47:15,209 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-21 11:48:03,701 | ERROR | Registrar cliente: Correo electrónico con formato incorrecto.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 771, in <lambda>
+    correcto, _ = self._realizar("Registrar cliente", lambda: self.sistema.registrar_cliente(
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{nombre: campo.get() for nombre, campo in self.campos_cliente.items()}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ))
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 87, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 83, in __init__
+    self.correo = correo
+    ^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 113, in correo
+    raise DatosInvalidosError("Correo electrónico con formato incorrecto.")
+excepciones.DatosInvalidosError: Correo electrónico con formato incorrecto.
+2026-11-21 11:48:03,706 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-21 11:48:09,801 | INFO | Registrar cliente: operación exitosa. Cliente: HAROLD VIASUS (ID: S001) | Correo: harold@gmail.com | Tel: 3042199808
+2026-11-21 11:48:09,801 | INFO | Fin de la operación 2: Registrar cliente
+2026-11-21 11:48:38,884 | INFO | Registrar cliente: operación exitosa. Cliente: ANA MARIA (ID: S002) | Correo: ana@outlook.com | Tel: 123456789
+2026-11-21 11:48:38,884 | INFO | Fin de la operación 3: Registrar cliente
+2026-11-21 11:49:03,518 | INFO | Registrar servicio: operación exitosa. EQUIPO: Kit audiovisual (ID: E001) | 1 unidades | Tarifa/unidad/hora: $6,000.00 | Depósito único: $50,000.00
+2026-11-21 11:49:03,518 | INFO | Fin de la operación 4: Registrar servicio
+2026-11-21 11:49:16,723 | INFO | Consultar disponibilidad: operación exitosa. True
+2026-11-21 11:49:16,723 | INFO | Fin de la operación 5: Consultar disponibilidad
+2026-11-21 11:49:18,318 | INFO | Consultar disponibilidad: operación exitosa. True
+2026-11-21 11:49:18,318 | INFO | Fin de la operación 6: Consultar disponibilidad
+2026-11-21 11:49:19,667 | INFO | Crear reserva: operación exitosa. RESERVA R001 [ACTIVA] | Cliente: HAROLD VIASUS (S001) | Servicio: Kit audiovisual (E001) | Inicio: 21/11/2026 11:50 | Fin: 21/11/2026 13:50 | 2 horas | Total: $62,000.00
+2026-11-21 11:49:19,667 | INFO | Fin de la operación 7: Crear reserva
+2026-11-21 11:49:27,599 | INFO | Consultar disponibilidad: operación exitosa. False
+2026-11-21 11:49:27,600 | INFO | Fin de la operación 8: Consultar disponibilidad
+2026-11-21 11:49:29,133 | INFO | Consultar disponibilidad: operación exitosa. False
+2026-11-21 11:49:29,133 | INFO | Fin de la operación 9: Consultar disponibilidad
+2026-11-21 11:49:41,900 | INFO | Consultar disponibilidad: operación exitosa. True
+2026-11-21 11:49:41,901 | INFO | Fin de la operación 10: Consultar disponibilidad
+2026-11-21 11:49:42,615 | INFO | Crear reserva: operación exitosa. RESERVA R002 [ACTIVA] | Cliente: ANA MARIA (S002) | Servicio: Kit audiovisual (E001) | Inicio: 22/11/2026 11:50 | Fin: 22/11/2026 13:50 | 2 horas | Total: $62,000.00
+2026-11-21 11:49:42,615 | INFO | Fin de la operación 11: Crear reserva
+2026-11-21 11:51:12,965 | ERROR | Consultar disponibilidad: Selecciona una fecha y hora futuras.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 863, in <lambda>
+    "Consultar disponibilidad", lambda: self.sistema.consultar_disponibilidad(
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self._id_seleccionado(self.servicio_reserva), self.fecha_reserva.get(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.hora_reserva.get(), self.horas_reserva.get(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 148, in consultar_disponibilidad
+    raise DatosInvalidosError("Selecciona una fecha y hora futuras.")
+excepciones.DatosInvalidosError: Selecciona una fecha y hora futuras.
+2026-11-21 11:51:12,967 | INFO | Fin de la operación 12: Consultar disponibilidad
+2026-11-21 11:51:25,002 | ERROR | Consultar disponibilidad: Selecciona una fecha y hora futuras.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 863, in <lambda>
+    "Consultar disponibilidad", lambda: self.sistema.consultar_disponibilidad(
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self._id_seleccionado(self.servicio_reserva), self.fecha_reserva.get(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.hora_reserva.get(), self.horas_reserva.get(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 148, in consultar_disponibilidad
+    raise DatosInvalidosError("Selecciona una fecha y hora futuras.")
+excepciones.DatosInvalidosError: Selecciona una fecha y hora futuras.
+2026-11-21 11:51:25,004 | INFO | Fin de la operación 13: Consultar disponibilidad
+2026-11-21 11:51:39,802 | INFO | Consultar disponibilidad: operación exitosa. False
+2026-11-21 11:51:39,802 | INFO | Fin de la operación 14: Consultar disponibilidad
+2026-11-21 12:01:59,557 | INFO | Cierre de Software FJ. Operaciones realizadas: 14
+2026-11-21 12:02:03,775 | INFO | Inicio de Software FJ; listas vacías en memoria.
+2026-11-21 12:02:23,913 | ERROR | Registrar cliente: Nombre: usa letras y separadores habituales.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 770, in <lambda>
+    correcto, _ = self._realizar("Registrar cliente", lambda: self.sistema.registrar_cliente(
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{nombre: campo.get() for nombre, campo in self.campos_cliente.items()}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ))
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 87, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 82, in __init__
+    self.nombre = nombre
+    ^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 95, in nombre
+    raise DatosInvalidosError("Nombre: usa letras y separadores habituales.")
+excepciones.DatosInvalidosError: Nombre: usa letras y separadores habituales.
+2026-11-21 12:02:23,914 | INFO | Fin de la operación 1: Registrar cliente
+2026-11-21 12:02:40,563 | ERROR | Registrar cliente: Nombre: usa letras y separadores habituales.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 770, in <lambda>
+    correcto, _ = self._realizar("Registrar cliente", lambda: self.sistema.registrar_cliente(
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{nombre: campo.get() for nombre, campo in self.campos_cliente.items()}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ))
+    ^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 87, in registrar_cliente
+    cliente = Cliente(identificador, nombre, correo, telefono)
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 82, in __init__
+    self.nombre = nombre
+    ^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 95, in nombre
+    raise DatosInvalidosError("Nombre: usa letras y separadores habituales.")
+excepciones.DatosInvalidosError: Nombre: usa letras y separadores habituales.
+2026-11-21 12:02:40,565 | INFO | Fin de la operación 2: Registrar cliente
+2026-11-21 12:03:18,245 | INFO | Registrar cliente: operación exitosa. Cliente: harold eduardo (ID: 1111) | Correo: 1111@gmail.com | Tel: 1234567890
+2026-11-21 12:03:18,245 | INFO | Fin de la operación 3: Registrar cliente
+2026-11-21 12:03:24,895 | ERROR | Registrar servicio: Tarifa base: escribe un número válido.
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 32, in validar_numero
+    numero = float(valor)
+ValueError: could not convert string to float: ''
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 69, in ejecutar
+    resultado = accion()
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/interfaz.py", line 789, in _guardar_servicio
+    return self.sistema.registrar_servicio(**datos, capacidad=self.capacidad_sala.get())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/sistema.py", line 94, in registrar_servicio
+    servicio = ReservaSala(identificador, nombre, tarifa, capacidad)
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 199, in __init__
+    super().__init__(identificador, nombre, tarifa_base)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 135, in __init__
+    self.tarifa_base = tarifa_base
+    ^^^^^^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 151, in tarifa_base
+    self._tarifa_base = round(validar_numero(valor, "Tarifa base", 0.01, 1000000000), 2)
+                              ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hevs/Documents/CURSOS/UNIVERSIDAD/PROGRAMACIÓN/FASE4/Fase4_Grupo213023_470/modelos.py", line 34, in validar_numero
+    raise DatosInvalidosError(f"{campo}: escribe un número válido.") from error
+excepciones.DatosInvalidosError: Tarifa base: escribe un número válido.
+2026-11-21 12:03:24,900 | INFO | Fin de la operación 4: Registrar servicio
+2026-11-21 12:03:30,245 | INFO | Registrar servicio: operación exitosa. SALA: Sala de reuniones (ID: 11111) | Capacidad: 10 p. | Tarifa/h: $500,000
+2026-11-21 12:03:30,246 | INFO | Fin de la operación 5: Registrar servicio
+2026-11-21 12:03:35,782 | INFO | Consultar disponibilidad: operación exitosa. True
+2026-11-21 12:03:35,782 | INFO | Fin de la operación 6: Consultar disponibilidad
+2026-11-21 12:03:36,596 | INFO | Crear reserva: operación exitosa. RESERVA R001 [ACTIVA] | Cliente: harold eduardo (1111) | Servicio: Sala de reuniones (11111) | Inicio: 21/11/2026 12:05 | Fin pactado: 21/11/2026 14:05 | 2 horas | Total: $1,000,000.00
+2026-11-21 12:03:36,597 | INFO | Fin de la operación 7: Crear reserva
+2026-11-21 12:03:55,379 | INFO | Reserva R001 finalizada anticipadamente | Fin pactado: 21/11/2026 14:05 | Fin real: 21/11/2026 12:03:55 | Observación: ya no van a usar mas la sala
+2026-11-21 12:03:55,379 | INFO | Finalizar reserva: operación exitosa. RESERVA R001 [FINALIZADA] | Cliente: harold eduardo (1111) | Servicio: Sala de reuniones (11111) | Inicio: 21/11/2026 12:05 | Fin pactado: 21/11/2026 14:05 | 2 horas | Total: $1,000,000.00 | Fin real: 21/11/2026 12:03:55 | Finalización anticipada | Observación: ya no van a usar mas la sala
+2026-11-21 12:03:55,379 | INFO | Fin de la operación 8: Finalizar reserva
+2026-11-21 12:04:04,814 | INFO | Cierre de Software FJ. Operaciones realizadas: 8
